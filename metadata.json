@@ -1,0 +1,5 @@
+{
+  "name": "SGSM-Akua",
+  "description": "Система автоматизации учета топлива на складе СГСМ Международного Аэропорта Сухум",
+  "requestFramePermissions": ["web-share"]
+}
