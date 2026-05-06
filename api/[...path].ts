@@ -49,7 +49,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Глобально обрабатываем CORS для всех API-запросов
   if (withCors(req, res)) return;
 
-  const pathArray = req.query.path as string[] || [];
+  let pathArray: string[] = [];
+  if (Array.isArray(req.query.path)) {
+    pathArray = req.query.path;
+  } else if (typeof req.query.path === 'string') {
+    pathArray = req.query.path.split('/');
+  } else if (req.url) {
+    const urlPath = req.url.split('?')[0].replace(/^\/api\//, '');
+    if (urlPath) pathArray = urlPath.split('/');
+  }
+
   const route = pathArray.join('/');
 
   try {
