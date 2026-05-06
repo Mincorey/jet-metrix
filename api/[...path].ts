@@ -55,11 +55,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } else if (typeof req.query.path === 'string') {
     pathArray = req.query.path.split('/');
   } else if (req.url) {
-    const urlPath = req.url.split('?')[0].replace(/^\/api\//, '');
+    const urlPath = req.url.split('?')[0].replace(/^\/api\//, '').replace(/^\//, '');
     if (urlPath) pathArray = urlPath.split('/');
   }
 
-  const route = pathArray.join('/');
+  const route = pathArray.filter(Boolean).join('/');
 
   try {
     if (route === 'backup') return await handler_0(req, res);
