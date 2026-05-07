@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../lib/_lib/db'
-import { sendError } from '../lib/_lib/helpers'
+import { supabase } from '../_lib/db'
+import { sendError } from '../_lib/helpers'
 
 const TABLES = [
   'Employees', 'Workdays', 'Fuel_Reception', 'Fuel_Reception_Auto',

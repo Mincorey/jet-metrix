@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../lib/_lib/db'
-import { sendError } from '../lib/_lib/helpers'
-import { sendTelegramNotification } from '../lib/_lib/telegram'
+import { supabase } from '../_lib/db'
+import { sendError } from '../_lib/helpers'
+import { sendTelegramNotification } from '../_lib/telegram'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
 
