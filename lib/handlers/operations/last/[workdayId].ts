@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../../../../_lib/db'
-import { sendError } from '../../../../_lib/helpers'
+import { supabase } from '../../../_lib/db'
+import { sendError } from '../../../_lib/helpers'
 
 const OPERATION_TABLES = [
   { table: 'Fuel_Reception', type: 'reception' },
