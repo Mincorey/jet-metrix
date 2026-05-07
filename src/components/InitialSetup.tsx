@@ -16,7 +16,7 @@ export default function InitialSetup({ onSetupComplete }: InitialSetupProps) {
     e.preventDefault();
 
     // Валидация логина (только буквы и пробелы)
-    const loginRegex = /^[A-Za-zА-Яа-яЁё\s]+$/;
+    const loginRegex = /^[A-Za-zА-Яа-яЁё\s.\-]+$/;
     if (!loginRegex.test(login)) {
       showToast('Логин может содержать только буквы и пробелы', 'error');
       return;
