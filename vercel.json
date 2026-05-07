@@ -2,13 +2,16 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/**/*.ts": {
-      "memory": 1024,
+    "api/[...path].ts": {
+      "maxDuration": 60
+    },
+    "api/test.ts": {
       "maxDuration": 60
     }
   },
   "rewrites": [
+    { "source": "/api/test", "destination": "/api/test" },
+    { "source": "/api/(.+)", "destination": "/api/[...path]" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
-
