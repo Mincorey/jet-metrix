@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../__lib/db'
-import { sendError } from '../__lib/helpers'
+import { supabase } from '../_lib/db'
+import { sendError } from '../_lib/helpers'
 
 function sum(rows: any[] | null, field: string): number {
   return (rows || []).reduce((acc, r) => acc + (r[field] || 0), 0)

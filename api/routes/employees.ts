@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../__lib/db'
-import { sendError } from '../__lib/helpers'
+import { supabase } from '../_lib/db'
+import { sendError } from '../_lib/helpers'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
