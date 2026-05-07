@@ -13,13 +13,15 @@ export interface Employee {
 
 export const fetchEmployees = async (): Promise<Employee[]> => {
   try {
-    console.log("1. Отправляем запрос Диспетчеру на порт 3001...");
     const response = await fetch('/api/employees');
+    if (!response.ok) {
+      console.error(`API /api/employees вернул ${response.status}`);
+      return [];
+    }
     const data = await response.json();
-    console.log("2. Получили данные из Сейфа:", data);
-    return data;
+    return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error("❌ Ошибка связи с Диспетчером:", error);
+    console.error("Ошибка при загрузке сотрудников:", error);
     return [];
   }
 };

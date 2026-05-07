@@ -63,6 +63,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const route = pathArray.join('/');
 
   try {
+    if (route === 'ping') return res.json({ ok: true, route, pathArray, supabase: !!process.env.SUPABASE_URL });
+
     if (route === 'backup') return await handler_0(req, res);
     
     // daily-measurements/latest/[tankName]
