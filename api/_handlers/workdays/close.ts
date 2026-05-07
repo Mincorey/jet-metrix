@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../../_lib/db'
-import { sendError } from '../../_lib/helpers'
-import { sendTelegramNotification } from '../../_lib/telegram'
+import { supabase } from '../../_lib/db.js'
+import { sendError } from '../../_lib/helpers.js'
+import { sendTelegramNotification } from '../../_lib/telegram.js'
 
 function sumField(rows: any[], field: string): number {
   return (rows || []).reduce((acc, r) => acc + (r[field] || 0), 0)

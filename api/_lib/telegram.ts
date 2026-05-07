@@ -1,4 +1,4 @@
-import { supabase } from './db'
+import { supabase } from './db.js'
 
 export async function sendTelegramNotification(message: string): Promise<void> {
   try {

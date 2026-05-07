@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../../_lib/db'
-import { sendError } from '../../_lib/helpers'
-import { sendTelegramMessage } from '../../_lib/telegram'
+import { supabase } from '../../_lib/db.js'
+import { sendError } from '../../_lib/helpers.js'
+import { sendTelegramMessage } from '../../_lib/telegram.js'
 
 async function getTelegramSettings() {
   const { data } = await supabase
