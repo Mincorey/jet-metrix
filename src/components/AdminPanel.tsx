@@ -319,7 +319,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
 
     const handleClearOperationsDB = async () => {
         try {
-            const response = await fetch(`http://${window.location.hostname}:3001/api/database/clear-operations`, {
+            const response = await fetch(`/api/database/clear-operations`, {
                 method: 'DELETE',
             });
             if (response.ok) {

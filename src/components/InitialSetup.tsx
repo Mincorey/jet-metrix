@@ -31,9 +31,7 @@ export default function InitialSetup({ onSetupComplete }: InitialSetupProps) {
 
     setLoading(true);
     try {
-      // @ts-ignore
-      const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : '';
-      const response = await fetch(`${API_BASE}/api/system/setup`, {
+      const response = await fetch(`/api/system/setup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ login, password }),

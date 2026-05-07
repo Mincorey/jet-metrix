@@ -22,7 +22,7 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
   const fetchParkState = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://${window.location.hostname}:3001/api/park-state`);
+      const response = await fetch(`/api/park-state`);
       if (response.ok) {
         const data = await response.json();
         setTanks(data);

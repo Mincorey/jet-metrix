@@ -90,11 +90,7 @@ export default function App() {
             url = url.startsWith('/') ? `/api${url}` : `/api/${url}`;
           }
 
-          // МАГИЯ VITE: Если мы в режиме разработки (npm run dev), бьем жестко в бэкенд. 
-          // Если на боевом сервере (npm run build) - оставляем относительный путь для Nginx.
-          // @ts-ignore
-          const API_BASE = import.meta.env.DEV ? `http://${window.location.hostname}:3001` : '';
-          url = `${API_BASE}${url}`;
+          // Используем относительные пути - работает везде (локально и на Vercel)
 
           const response = await fetch(url, {
             method: 'POST',
@@ -121,9 +117,7 @@ export default function App() {
   useEffect(() => {
     const checkSetup = async () => {
       try {
-        // @ts-ignore
-        const API_BASE = import.meta.env.DEV ? `http://${window.location.hostname}:3001` : '';
-        const response = await fetch(`${API_BASE}/api/system/setup-status`);
+        const response = await fetch(`/api/system/setup-status`);
         if (response.ok) {
           const data = await response.json();
           setIsConfigured(data.isConfigured);
@@ -269,7 +263,7 @@ const handleSendChecklist = async () => {
     if (!currentWorkday || !currentUser) return;
     setSendingChecklist(true);
     try {
-        const response = await fetch(`http://${window.location.hostname}:3001/api/send-checklist`, {
+        const response = await fetch(`/api/send-checklist`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
