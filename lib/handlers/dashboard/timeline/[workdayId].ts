@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../../../_lib/db'
-import { sendError } from '../../../_lib/helpers'
+import { supabase } from '../../../../_lib/db'
+import { sendError } from '../../../../_lib/helpers'
 
 function extractTime(dateStr: string | null): string {
   if (!dateStr) return '12:00'
