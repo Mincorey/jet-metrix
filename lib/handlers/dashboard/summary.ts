@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../../_lib/db'
-import { sendError } from '../../_lib/helpers'
+import { supabase } from '../../_lib/db.ts'
+import { sendError } from '../../_lib/helpers.ts'
 
 function parseRuDate(dStr: string): number {
   if (!dStr) return 0

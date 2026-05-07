@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../../../_lib/db'
-import { sendError } from '../../../_lib/helpers'
-import { sendTelegramMessage } from '../../../_lib/telegram'
+import { supabase } from '../../../_lib/db.ts'
+import { sendError } from '../../../_lib/helpers.ts'
+import { sendTelegramMessage } from '../../../_lib/telegram.ts'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'POST') {
