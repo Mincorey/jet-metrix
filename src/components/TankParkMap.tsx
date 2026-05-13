@@ -80,10 +80,10 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4 sm:p-8 pb-24 sm:pb-32 font-sans transition-colors duration-200">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4 pt-14 pb-20 font-sans transition-colors duration-200 flex flex-col">
+      <div className="w-full max-w-md mx-auto">
         {/* Header */}
-        <div className="w-full max-w-7xl mx-auto mb-8">
+        <div className="w-full mb-8">
           <button 
             onClick={onBack} 
             className="mb-6 flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-xl transition-all w-fit font-medium text-sm active:scale-95"
@@ -110,7 +110,7 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
                   <div className="w-2 h-8 bg-emerald-500 rounded-full" />
                   <h2 className="text-lg font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Группа РГС-100</h2>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 sm:gap-8">
+                <div className="grid grid-cols-2 gap-4">
                   {rgs100.map(tank => <TankCylinder key={tank.name} tank={tank} />)}
                 </div>
               </section>
@@ -123,7 +123,7 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
                   <div className="w-2 h-8 bg-amber-400 rounded-full" />
                   <h2 className="text-lg font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Группа РГС-50</h2>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 sm:gap-8">
+                <div className="grid grid-cols-2 gap-4">
                   {rgs50.map(tank => <TankCylinder key={tank.name} tank={tank} />)}
                 </div>
               </section>
@@ -199,7 +199,7 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
           </div>
         )}
         {/* Дублирующая кнопка Назад внизу */}
-        <div className="w-full max-w-7xl mx-auto mt-12 flex justify-center">
+        <div className="w-full mt-12 flex justify-center">
           <button 
             onClick={onBack} 
             className="w-full sm:w-64 py-4 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-lg font-bold rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"

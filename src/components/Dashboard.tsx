@@ -175,7 +175,7 @@ export default function Dashboard({ onBack }: DashboardProps) {
   const rgs100MaxDomain = rgs100Balances.length > 0 ? Math.max(...rgs100Balances.map((d: any) => d.maxCapacity)) : 110000;
 
   return (
-    <div id="dashboard-content" className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 pt-14 pb-20 md:p-8 md:pt-14 md:pb-12 font-sans w-full max-w-7xl mx-auto transition-colors duration-200">
+    <div id="dashboard-content" className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 pt-14 pb-20 font-sans w-full max-w-md mx-auto transition-colors duration-200 flex flex-col">
       <button 
         onClick={onBack} 
         className="mb-6 flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-xl transition-all w-fit font-medium text-sm active:scale-95"
@@ -191,7 +191,7 @@ export default function Dashboard({ onBack }: DashboardProps) {
           className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-50 text-base font-semibold py-3 px-5 rounded-xl transition-all shadow-sm active:scale-95"
         >
           <Download className="w-5 h-5" />
-          <span className="hidden sm:inline">Скриншот</span>
+          <span className="inline">Скриншот</span>
         </button>
       </div>
 
@@ -225,7 +225,7 @@ export default function Dashboard({ onBack }: DashboardProps) {
       ) : data ? (
         <>
           {/* KPI Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 pdf-section">
+          <div className="flex flex-col gap-4 mb-8 pdf-section">
             <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50">
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Всего топлива на складе</h3>
               <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
@@ -262,7 +262,7 @@ export default function Dashboard({ onBack }: DashboardProps) {
           </div>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6 pdf-section">
+          <div className="flex flex-col gap-6 mb-6 pdf-section">
             {/* Chart 1: Остатки РГС-50 */}
             <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50">
               <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Остатки РГС-50 (л)</h3>
