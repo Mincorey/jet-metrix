@@ -81,7 +81,7 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
     }
 
     const volume = parseFloat((after - before).toFixed(2));
-    const mass = parseFloat((volume * density).toFixed(2));
+    const mass = Math.round(volume * density);
 
     const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
 
