@@ -6,6 +6,7 @@ import { FuelDispensingVSRecord, addFuelDispensingVSDB } from '../data/Fuel_Disp
 import { getLatestDensityDB } from '../data/Daily_Measurements';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
+import { normalizeDensity } from '../utils/densityHelper';
 
 interface FuelDispensingVSProps {
   currentWorkday: WorkdayRecord;
@@ -65,7 +66,7 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
       return;
     }
 
-    const density = parseFloat(densityStr.replace(',', '.'));
+    const density = normalizeDensity(densityStr);
     const before = parseFloat(counterBefore.replace(',', '.'));
     const after = parseFloat(counterAfter.replace(',', '.'));
 

@@ -6,6 +6,7 @@ import { saveAs } from 'file-saver';
 import { WorkdayRecord } from '../data/WORKDAY';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
+import { normalizeDensity } from '../utils/densityHelper';
 
 interface InWarehouseTransferProps {
   currentUser: { Name: string };
@@ -80,7 +81,7 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
 
     const before = parseFloat(counterBefore.replace(',', '.'));
     const after = parseFloat(counterAfter.replace(',', '.'));
-    const dens = parseFloat(density.replace(',', '.'));
+    const dens = normalizeDensity(density);
     const temp = parseFloat(temperature.replace(',', '.'));
 
     if (isNaN(before) || isNaN(after) || isNaN(dens) || isNaN(temp)) {

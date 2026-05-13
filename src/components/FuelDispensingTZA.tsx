@@ -7,6 +7,7 @@ import { RGSMeasurement } from '../data/MeasurementTypes';
 import { getLatestDensityDB } from '../data/Daily_Measurements';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
+import { normalizeDensity } from '../utils/densityHelper';
 
 // Import tables (assuming they are used elsewhere or just kept)
 interface FuelDispensingTZAProps {
@@ -134,7 +135,7 @@ export default function FuelDispensingTZA({ currentWorkday, onBack }: FuelDispen
 
     const volume = parseFloat((after - before).toFixed(2));
 
-    const parsedDensity = parseFloat(density.replace(',', '.'));
+    const parsedDensity = normalizeDensity(density);
     if (isNaN(parsedDensity) || parsedDensity <= 0) {
       showToast('Некорректная плотность.', 'error');
       return;

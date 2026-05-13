@@ -7,6 +7,7 @@ import { RGSMeasurement } from '../data/MeasurementTypes';
 import { addDailyMeasurementDB } from '../data/Daily_Measurements';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
+import { normalizeDensity } from '../utils/densityHelper';
 
 interface FuelMeasurementProps {
   currentWorkday: WorkdayRecord;
@@ -70,7 +71,7 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
     const level3 = parseInt(l3, 10);
     const avgLevel = Math.round((level1 + level2 + level3) / 3);
 
-    const parsedDensity = parseFloat(density.replace(',', '.'));
+    const parsedDensity = normalizeDensity(density);
     const parsedTemp = parseFloat(temp.replace(',', '.'));
 
     const selectedTankData = activeTanks.find(t => t.Name === selectedTank);

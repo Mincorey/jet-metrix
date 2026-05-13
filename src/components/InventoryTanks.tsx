@@ -5,6 +5,7 @@ import { addInventoryRecord, inventoryTable } from '../data/Inventory';
 import { WorkdayRecord } from '../data/WORKDAY';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
+import { normalizeDensity } from '../utils/densityHelper';
 
 // Константы больше не нужны, так как трубопроводы теперь - Тех. Линии в БД
 
@@ -111,9 +112,8 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
       return;
     }
 
-    const denStr = density.replace(',', '.');
     const tempStr = temperature.replace(',', '.');
-    const den = parseFloat(denStr);
+    const den = normalizeDensity(density);
     const temp = parseFloat(tempStr);
 
     if (isNaN(den) || isNaN(temp)) {
@@ -240,7 +240,7 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
     const l1 = parseInt(level1, 10);
     const l2 = parseInt(level2, 10);
     const l3 = parseInt(level3, 10);
-    const den = parseFloat(density.replace(',', '.'));
+    const den = normalizeDensity(density);
     const temp = parseFloat(temperature.replace(',', '.'));
 
     let avgLevel = isNaN(l1) || isNaN(l2) || isNaN(l3) ? '-' : Math.round((l1 + l2 + l3) / 3);

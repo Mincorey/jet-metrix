@@ -5,6 +5,7 @@ import { WorkdayRecord } from '../data/WORKDAY';
 import { getLatestDensityDB } from '../data/Daily_Measurements';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
+import { normalizeDensity } from '../utils/densityHelper';
 
 interface FuelReceptionAutoProps {
   currentWorkday: WorkdayRecord;
@@ -107,7 +108,7 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
 
     const volume = parseFloat((after - before).toFixed(2));
 
-    const parsedDensity = parseFloat(density.replace(',', '.'));
+    const parsedDensity = normalizeDensity(density);
     if (isNaN(parsedDensity) || parsedDensity <= 0) {
       showToast('Некорректная плотность.', 'error');
       return;

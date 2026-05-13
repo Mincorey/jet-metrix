@@ -4,6 +4,7 @@ import * as htmlToImage from 'html-to-image';
 import { WorkdayRecord } from '../data/WORKDAY';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
+import { normalizeDensity } from '../utils/densityHelper';
 
 interface TrainMeasurementProps {
   currentWorkday: WorkdayRecord;
@@ -58,7 +59,7 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
     const level3 = parseInt(l3, 10);
     const avgLevel = Math.round((level1 + level2 + level3) / 3);
 
-    const parsedDensity = parseFloat(density.replace(',', '.'));
+    const parsedDensity = normalizeDensity(density);
     const parsedTemp = parseFloat(temp.replace(',', '.'));
 
     let volume = 0;
