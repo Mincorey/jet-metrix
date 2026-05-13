@@ -18,11 +18,15 @@ export async function sendTelegramNotification(message: string): Promise<void> {
     const chatIds: string[] = JSON.parse(map['telegram_chat_ids'])
 
     for (const chatId of chatIds) {
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' })
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        console.error(`Telegram API Error for chat ${chatId}:`, err.description || res.status)
+      }
     }
   } catch (e) {
     console.error('Telegram notification error:', e)
@@ -30,9 +34,14 @@ export async function sendTelegramNotification(message: string): Promise<void> {
 }
 
 export async function sendTelegramMessage(token: string, chatId: string, text: string): Promise<void> {
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' })
   })
+  
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}))
+    throw new Error(errorData.description || `Telegram API Error ${res.status}`)
+  }
 }
