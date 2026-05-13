@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     try {
-      const { operationType, id, data } = req.body
+      const { operationType, id, data, action } = req.body
       const table = TABLE_MAP[operationType]
       if (!table) return sendError(res, 400, 'Неизвестный тип операции')
 
@@ -30,8 +30,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .eq('Name', oldRecord.TZA).eq('Is_Monitoring', 1).single()
 
           if (tza) {
-            const deltaVolume = (data.Volume || 0) - (oldRecord.Volume || 0)
-            const adjustment = operationType === 'dispense_tza' ? deltaVolume : -deltaVolume
+            let deltaVolume = 0;
+            if (action === 'delete') {
+              deltaVolume = -(oldRecord.Volume || 0);
+            } else {
+              deltaVolume = (data?.Volume || 0) - (oldRecord.Volume || 0);
+            }
+            const adjustment = operationType === 'dispense_tza' ? deltaVolume : -deltaVolume;
+
             await supabase
               .from('TZA_Directory')
               .update({ Current_Volume: (tza.Current_Volume || 0) + adjustment })
@@ -40,10 +46,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      const { error } = await supabase.from(table).update(data).eq('id', id)
-      if (error) throw error
-
-      return res.json({ success: true, message: 'Операция успешно обновлена' })
+      if (action === 'delete') {
+        const { error } = await supabase.from(table).delete().eq('id', id)
+        if (error) throw error
+        return res.json({ success: true, message: 'Операция успешно удалена' })
+      } else {
+        const { error } = await supabase.from(table).update(data).eq('id', id)
+        if (error) throw error
+        return res.json({ success: true, message: 'Операция успешно обновлена' })
+      }
     } catch (error) {
       console.error('Edit operation error:', error)
       return sendError(res, 500, 'Ошибка сервера при редактировании')
