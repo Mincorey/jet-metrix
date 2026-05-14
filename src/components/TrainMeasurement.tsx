@@ -21,7 +21,7 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
   const [l3, setL3] = useState('');
   const [density, setDensity] = useState('');
   const [temp, setTemp] = useState('');
-
+  const [isSaving, setIsSaving] = useState(false);
 
 
   const [resultData, setResultData] = useState<any>(null);
@@ -116,6 +116,7 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
       Mass: mass
     };
 
+    setIsSaving(true);
     try {
       if (navigator.onLine) {
         const response = await fetch('/api/trains', {
@@ -140,6 +141,8 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
     } catch (error) {
       console.error('Error saving train data:', error);
       showToast('Ошибка при соединении с сервером.', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -174,7 +177,7 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
       await new Promise(res => setTimeout(res, 100));
       const blob = await htmlToImage.toBlob(element, {
         quality: 0.95,
-        backgroundColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff'
+        backgroundColor: '#0f172a'
       });
 
       if (!blob) return;
@@ -326,9 +329,10 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
             <div className="flex flex-col gap-3 pt-2">
               <button
                 onClick={handleCalculateAndSave}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4.5 rounded-xl text-lg transition-all shadow-md active:scale-[0.98]"
+                disabled={isSaving}
+                className={`w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4.5 rounded-xl text-lg transition-all shadow-md active:scale-[0.98] ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Записать
+                {isSaving ? 'Запись...' : 'Записать'}
               </button>
               <button
                 onClick={onBack}
@@ -346,7 +350,7 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl flex flex-col items-center">
 
-            <div id="train-result-modal" className="w-full bg-slate-900 border-none rounded-xl p-5 mb-6 text-white shadow-lg overflow-hidden relative">
+            <div id="train-result-modal" className="w-full bg-slate-900 border-none rounded-xl p-5 mb-6 text-white shadow-lg overflow-hidden relative" style={{ backgroundColor: '#0f172a' }}>
               <h3 className="text-xl font-bold text-center mb-1 text-white">Замер Цистерны</h3>
               <p className="text-center text-slate-400 text-xs mb-5">
                 Сотрудник: {currentWorkday?.Name} | {resultData.Date}

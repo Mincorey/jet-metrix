@@ -31,6 +31,7 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [isTanksExpanded, setIsTanksExpanded] = useState(false);
     const [isTrainsExpanded, setIsTrainsExpanded] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Tech Lines state
     const [techLines, setTechLines] = useState<TechLine[]>([]);
@@ -103,6 +104,7 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
             return;
         }
 
+        setIsSaving(true);
         try {
             const response = await fetch('/api/tanks', {
                 method: 'POST',
@@ -124,6 +126,8 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
         } catch (error) {
             console.error("Error saving tank:", error);
             showToast("Ошибка при сохранении", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -139,6 +143,7 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
             return;
         }
 
+        setIsSaving(true);
         try {
             const url = editingTech
                 ? `/api/tech-lines/${editingTech.id}`
@@ -164,11 +169,14 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
         } catch (error) {
             console.error("Error saving tech line:", error);
             showToast("Ошибка соединения с сервером", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleDeleteTechLine = async () => {
         if (!techLineToDelete) return;
+        setIsSaving(true);
         try {
             const response = await fetch(`/api/tech-lines/${techLineToDelete}`, { method: 'DELETE' });
             if (response.ok) {
@@ -182,6 +190,7 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
             showToast("Ошибка соединения с сервером", "error");
         } finally {
             setTechLineToDelete(null);
+            setIsSaving(false);
         }
     };
 
@@ -194,6 +203,7 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
 
     const handleToggleStatus = async (id: number, currentStatus: string) => {
         const newStatus = currentStatus === 'active' ? 'archived' : 'active';
+        setIsSaving(true);
         try {
             const response = await fetch(`/api/tanks/${id}/status`, {
                 method: 'PUT',
@@ -208,10 +218,13 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
             }
         } catch (error) {
             console.error('Error toggling status:', error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const executeClearAll = async () => {
+        setIsSaving(true);
         try {
             const response = await fetch('/api/tanks/all', { method: 'DELETE' });
             if (response.ok) {
@@ -222,6 +235,8 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
             }
         } catch (error) {
             console.error("Ошибка при очистке:", error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -456,9 +471,10 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
                                 <div className="flex gap-3 mt-2">
                                     <button
                                         onClick={handleSave}
-                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
+                                        disabled={isSaving}
+                                        className={`flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium py-2.5 rounded-lg transition-colors ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                                     >
-                                        Сохранить
+                                        {isSaving ? 'Сохранение...' : 'Сохранить'}
                                     </button>
                                     <button
                                         onClick={() => {
@@ -466,7 +482,8 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
                                             setNewName('');
                                             setCalibrationData([]);
                                         }}
-                                        className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2.5 rounded-lg transition-colors"
+                                        disabled={isSaving}
+                                        className={`flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2.5 rounded-lg transition-colors ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                                     >
                                         Отмена
                                     </button>
@@ -516,9 +533,10 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
                                 <div className="flex gap-3 mt-2">
                                     <button
                                         onClick={handleSaveTechLine}
-                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
+                                        disabled={isSaving}
+                                        className={`flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium py-2.5 rounded-lg transition-colors ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                                     >
-                                        Сохранить
+                                        {isSaving ? 'Сохранение...' : 'Сохранить'}
                                     </button>
                                     <button
                                         onClick={() => {
@@ -527,7 +545,8 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
                                             setTechVolume('');
                                             setEditingTech(null);
                                         }}
-                                        className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2.5 rounded-lg transition-colors"
+                                        disabled={isSaving}
+                                        className={`flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2.5 rounded-lg transition-colors ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                                     >
                                         Отмена
                                     </button>
@@ -553,13 +572,15 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
                         <div className="flex gap-3">
                             <button
                                 onClick={handleDeleteTechLine}
-                                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors shadow-sm active:scale-95"
+                                disabled={isSaving}
+                                className={`flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors shadow-sm active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
-                                Да, удалить
+                                {isSaving ? 'Удаление...' : 'Да, удалить'}
                             </button>
                             <button
                                 onClick={() => setTechLineToDelete(null)}
-                                className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2.5 rounded-xl transition-colors active:scale-95"
+                                disabled={isSaving}
+                                className={`flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2.5 rounded-xl transition-colors active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
                                 Отмена
                             </button>
@@ -583,13 +604,15 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
                         <div className="flex gap-3">
                             <button
                                 onClick={executeClearAll}
-                                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors shadow-sm active:scale-95"
+                                disabled={isSaving}
+                                className={`flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors shadow-sm active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
-                                Да, удалить всё
+                                {isSaving ? 'Удаление...' : 'Да, удалить всё'}
                             </button>
                             <button
                                 onClick={() => setShowClearConfirm(false)}
-                                className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2.5 rounded-xl transition-colors active:scale-95"
+                                disabled={isSaving}
+                                className={`flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2.5 rounded-xl transition-colors active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
                                 Отмена
                             </button>

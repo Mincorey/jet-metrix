@@ -57,6 +57,7 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
   const [sendingChecklist, setSendingChecklist] = useState(false);
+  const [isClosingShift, setIsClosingShift] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -247,11 +248,16 @@ export default function App() {
   const handleCloseShift = async () => {
     if (!currentWorkday) return;
 
-    await closeWorkdayDB(currentWorkday.id);
-    setCurrentWorkday(null);
-    setCurrentUser(null);
-    localStorage.removeItem('sgsm_saved_user');
-    setCurrentPage('start');
+    setIsClosingShift(true);
+    try {
+      await closeWorkdayDB(currentWorkday.id);
+      setCurrentWorkday(null);
+      setCurrentUser(null);
+      localStorage.removeItem('sgsm_saved_user');
+      setCurrentPage('start');
+    } finally {
+      setIsClosingShift(false);
+    }
   };
 
   const handleDeleteShift = () => {
@@ -294,14 +300,20 @@ const handleSendChecklist = async () => {
     }
   };
 
-  const confirmDeleteShift = () => {
+  const confirmDeleteShift = async () => {
     if (!currentWorkday) return;
-    deleteWorkday(currentWorkday.id);
-    setCurrentWorkday(null);
-    setCurrentUser(null);
-    setShowDeleteConfirm(false);
-    localStorage.removeItem('sgsm_saved_user');
-    setCurrentPage('start');
+    
+    setIsClosingShift(true);
+    try {
+      await deleteWorkday(currentWorkday.id);
+      setCurrentWorkday(null);
+      setCurrentUser(null);
+      setShowDeleteConfirm(false);
+      localStorage.removeItem('sgsm_saved_user');
+      setCurrentPage('start');
+    } finally {
+      setIsClosingShift(false);
+    }
   };
 
   // Authorization logic
@@ -526,13 +538,15 @@ const handleSendChecklist = async () => {
             </button>
             <button
               onClick={handleCloseShift}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-4 px-6 rounded-xl transition-all shadow-sm active:scale-95"
+              disabled={isClosingShift}
+              className={`bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-4 px-6 rounded-xl transition-all shadow-sm active:scale-95 ${isClosingShift ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              Закрыть смену
+              {isClosingShift ? 'Закрытие...' : 'Закрыть смену'}
             </button>
             <button
               onClick={handleDeleteShift}
-              className="bg-rose-600 hover:bg-rose-700 text-white text-lg font-bold py-4 px-6 rounded-xl transition-all shadow-sm active:scale-95"
+              disabled={isClosingShift}
+              className={`bg-rose-600 hover:bg-rose-700 text-white text-lg font-bold py-4 px-6 rounded-xl transition-all shadow-sm active:scale-95 ${isClosingShift ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               Удалить запись о смене
             </button>
@@ -559,13 +573,15 @@ const handleSendChecklist = async () => {
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={confirmDeleteShift}
-                    className="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-2.5 rounded-xl transition-colors"
+                    disabled={isClosingShift}
+                    className={`w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-2.5 rounded-xl transition-colors ${isClosingShift ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
-                    Удалить
+                    {isClosingShift ? 'Удаление...' : 'Удалить'}
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
-                    className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2.5 rounded-xl transition-colors"
+                    disabled={isClosingShift}
+                    className={`w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2.5 rounded-xl transition-colors ${isClosingShift ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
                     Отмена
                   </button>

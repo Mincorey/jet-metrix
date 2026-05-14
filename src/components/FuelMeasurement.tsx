@@ -47,6 +47,7 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
   const [l3, setL3] = useState('');
   const [density, setDensity] = useState('');
   const [temp, setTemp] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Result state
   const [result, setResult] = useState<RGSMeasurement | null>(null);
@@ -115,41 +116,15 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
     const volume = Number(calculatedVolume.toFixed(2));
     const mass = parseFloat((volume * parsedDensity).toFixed(2));
 
-    const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+    setIsSaving(true);
+    try {
+      const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
 
-    const measurement = {
-      Workday_ID: currentWorkday.id,
-      Date: currentDate,
-      Name: currentWorkday.Name,
-      Tank_Name: selectedTank!,
-      Level_1: level1,
-      Level_2: level2,
-      Level_3: level3,
-      Average_Level: avgLevel,
-      Density: parsedDensity,
-      Temperature: parsedTemp,
-      Volume: volume,
-      Mass: mass
-    };
-
-    let result = false;
-    let tempId: number | null = null;
-
-    if (navigator.onLine) {
-      const dbResult = await addDailyMeasurementDB(measurement);
-      if (dbResult) result = true;
-    } else {
-      tempId = Date.now();
-      await saveToQueue('/api/daily-measurements', measurement);
-      showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
-      result = true;
-    }
-
-    if (result) {
-      // Update local state for display
-      const localMeasurement: RGSMeasurement = {
-        id: tempId || Date.now(),
+      const measurement = {
+        Workday_ID: currentWorkday.id,
         Date: currentDate,
+        Name: currentWorkday.Name,
+        Tank_Name: selectedTank!,
         Level_1: level1,
         Level_2: level2,
         Level_3: level3,
@@ -160,10 +135,41 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
         Mass: mass
       };
 
-      setResult(localMeasurement);
-      setResultData({ ...measurement, id: tempId || Date.now() }); // Показываем модалку с чеком
-    } else {
-      showToast('Ошибка при сохранении замера на Сервере.', 'error');
+      let result = false;
+      let tempId: number | null = null;
+
+      if (navigator.onLine) {
+        const dbResult = await addDailyMeasurementDB(measurement);
+        if (dbResult) result = true;
+      } else {
+        tempId = Date.now();
+        await saveToQueue('/api/daily-measurements', measurement);
+        showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
+        result = true;
+      }
+
+      if (result) {
+        // Update local state for display
+        const localMeasurement: RGSMeasurement = {
+          id: tempId || Date.now(),
+          Date: currentDate,
+          Level_1: level1,
+          Level_2: level2,
+          Level_3: level3,
+          Average_Level: avgLevel,
+          Density: parsedDensity,
+          Temperature: parsedTemp,
+          Volume: volume,
+          Mass: mass
+        };
+
+        setResult(localMeasurement);
+        setResultData({ ...measurement, id: tempId || Date.now() }); // Показываем модалку с чеком
+      } else {
+        showToast('Ошибка при сохранении замера на Сервере.', 'error');
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -196,7 +202,7 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
       await new Promise(res => setTimeout(res, 100));
       const blob = await htmlToImage.toBlob(element, {
         quality: 0.95,
-        backgroundColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff'
+        backgroundColor: document.documentElement.classList.contains('dark') ? '#334155' : '#f8fafc'
       });
 
       if (!blob) return;
@@ -428,9 +434,10 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={handleSave}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95"
+                  disabled={isSaving}
+                  className={`flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  Записать
+                  {isSaving ? 'Запись...' : 'Записать'}
                 </button>
                 <button
                   onClick={() => setSelectedTank(null)}
@@ -449,7 +456,7 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl flex flex-col items-center">
 
-            <div id="tank-result-modal" className="w-full bg-slate-50 dark:bg-slate-700/50 rounded-xl p-5 border border-slate-200 dark:border-slate-600 mb-6">
+            <div id="tank-result-modal" className="w-full bg-slate-50 dark:bg-slate-700/50 rounded-xl p-5 border border-slate-200 dark:border-slate-600 mb-6" style={{ backgroundColor: document.documentElement.classList.contains('dark') ? '#334155' : '#f8fafc' }}>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white text-center mb-1">
                 Результаты: {resultData.Tank_Name}
               </h3>

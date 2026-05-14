@@ -25,7 +25,7 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
   const [counterAfter, setCounterAfter] = useState('');
   const [density, setDensity] = useState('');
   const [temperature, setTemperature] = useState('');
-
+  const [isSaving, setIsSaving] = useState(false);
   const [resultData, setResultData] = useState<any>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
@@ -115,6 +115,7 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
       Mass: mass
     };
 
+    setIsSaving(true);
     try {
       if (navigator.onLine) {
         const res = await fetch('/api/in-warehouse', {
@@ -138,6 +139,8 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
     } catch (error) {
       console.error("Save error:", error);
       showToast('Ошибка при сохранении!', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -319,8 +322,8 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
               </div>
             </div>
             <div className="pt-2 flex flex-col gap-3">
-              <button onClick={handleSave} className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-lg shadow-lg shadow-emerald-600/20 active:scale-[0.98] transition-all">
-                Внести данные
+              <button onClick={handleSave} disabled={isSaving} className={`w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-lg shadow-lg shadow-emerald-600/20 active:scale-[0.98] transition-all ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                {isSaving ? 'Запись...' : 'Внести данные'}
               </button>
               <button onClick={() => setStep(2)} className="w-full py-4 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium rounded-2xl active:scale-[0.98]">
                 Назад

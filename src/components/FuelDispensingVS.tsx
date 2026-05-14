@@ -45,6 +45,7 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
   const [densityStr, setDensityStr] = useState('');
   const [counterBefore, setCounterBefore] = useState('');
   const [counterAfter, setCounterAfter] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const [resultData, setResultData] = useState<any>(null);
 
@@ -80,43 +81,48 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
       return;
     }
 
-    const volume = parseFloat((after - before).toFixed(2));
-    const mass = Math.round(volume * density);
+    setIsSaving(true);
+    try {
+      const volume = parseFloat((after - before).toFixed(2));
+      const mass = Math.round(volume * density);
 
-    const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+      const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
 
-    const recordPayload = {
-      Workday_ID: currentWorkday.id,
-      Date: currentDate,
-      Name: currentWorkday.Name,
-      TZA: selectedTZA!,
-      Control_Number: controlNumber.trim(),
-      Passport_Number: passportNumber.trim(),
-      Passport_Date: passportDate.trim(),
-      Counter_Before: before,
-      Counter_After: after,
-      Density: density,
-      Volume: volume,
-      Mass: mass
-    };
+      const recordPayload = {
+        Workday_ID: currentWorkday.id,
+        Date: currentDate,
+        Name: currentWorkday.Name,
+        TZA: selectedTZA!,
+        Control_Number: controlNumber.trim(),
+        Passport_Number: passportNumber.trim(),
+        Passport_Date: passportDate.trim(),
+        Counter_Before: before,
+        Counter_After: after,
+        Density: density,
+        Volume: volume,
+        Mass: mass
+      };
 
-    let result = false;
-    let tempId: number | null = null;
+      let result = false;
+      let tempId: number | null = null;
 
-    if (navigator.onLine) {
-      const dbResult = await addFuelDispensingVSDB(recordPayload);
-      if (dbResult) result = true;
-    } else {
-      tempId = Date.now();
-      await saveToQueue('/api/fuel-dispensing-vs', recordPayload);
-      result = true;
-      showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
-    }
+      if (navigator.onLine) {
+        const dbResult = await addFuelDispensingVSDB(recordPayload);
+        if (dbResult) result = true;
+      } else {
+        tempId = Date.now();
+        await saveToQueue('/api/fuel-dispensing-vs', recordPayload);
+        result = true;
+        showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
+      }
 
-    if (result) {
-      setResultData({ ...recordPayload, id: tempId || Date.now() });
-    } else {
-      showToast('Ошибка при сохранении заправки ВС на Сервере.', 'error');
+      if (result) {
+        setResultData({ ...recordPayload, id: tempId || Date.now() });
+      } else {
+        showToast('Ошибка при сохранении заправки ВС на Сервере.', 'error');
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -153,7 +159,7 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
       await new Promise(res => setTimeout(res, 100)); // wait for render
       const blob = await htmlToImage.toBlob(element, {
         quality: 0.95,
-        backgroundColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff'
+        backgroundColor: '#0f172a'
       });
 
       if (!blob) return;
@@ -350,9 +356,10 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
             <div className="flex flex-col gap-3 pt-2">
               <button
                 onClick={handleCalculateAndSave}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4.5 rounded-xl text-lg transition-all shadow-md active:scale-[0.98]"
+                disabled={isSaving}
+                className={`w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4.5 rounded-xl text-lg transition-all shadow-md active:scale-[0.98] ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Записать
+                {isSaving ? 'Запись...' : 'Записать'}
               </button>
               <button
                 onClick={() => setStep(1)}
@@ -370,7 +377,7 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl flex flex-col items-center">
 
-            <div id="vs-result-modal" className="w-full bg-slate-900 border-none rounded-xl p-5 mb-6 text-white shadow-lg overflow-hidden relative">
+            <div id="vs-result-modal" className="w-full bg-slate-900 border-none rounded-xl p-5 mb-6 text-white shadow-lg overflow-hidden relative" style={{ backgroundColor: '#0f172a' }}>
               <h3 className="text-xl font-bold text-center mb-1 text-white">Выдача в ВС</h3>
               <p className="text-center text-slate-400 text-xs mb-5">
                 Сотрудник: {currentWorkday?.Name} | {resultData.Date}

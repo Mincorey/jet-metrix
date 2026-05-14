@@ -22,6 +22,7 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
   const [counterAfter, setCounterAfter] = useState('');
   const [density, setDensity] = useState('');
   const [temperature, setTemperature] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const [resultData, setResultData] = useState<any>(null);
 
@@ -106,60 +107,65 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
       return;
     }
 
-    const volume = parseFloat((after - before).toFixed(2));
+    setIsSaving(true);
+    try {
+      const volume = parseFloat((after - before).toFixed(2));
 
-    const parsedDensity = normalizeDensity(density);
-    if (isNaN(parsedDensity) || parsedDensity <= 0) {
-      showToast('Некорректная плотность.', 'error');
-      return;
-    }
+      const parsedDensity = normalizeDensity(density);
+      if (isNaN(parsedDensity) || parsedDensity <= 0) {
+        showToast('Некорректная плотность.', 'error');
+        return;
+      }
 
-    const mass = parseFloat((volume * parsedDensity).toFixed(2));
+      const mass = parseFloat((volume * parsedDensity).toFixed(2));
 
-    const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+      const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
 
-    const recordPayload = {
-      Date: currentDate,
-      Name: currentWorkday.Name,
-      Gos_Number: gosNumber,
-      Tank_Name: selectedTank!,
-      Counter_Before: before,
-      Counter_After: after,
-      Density: parsedDensity,
-      Temperature: temp,
-      Volume: volume,
-      Mass: mass
-    };
+      const recordPayload = {
+        Date: currentDate,
+        Name: currentWorkday.Name,
+        Gos_Number: gosNumber,
+        Tank_Name: selectedTank!,
+        Counter_Before: before,
+        Counter_After: after,
+        Density: parsedDensity,
+        Temperature: temp,
+        Volume: volume,
+        Mass: mass
+      };
 
-    let result = false;
-    let tempId: number | null = null;
+      let result = false;
+      let tempId: number | null = null;
 
-    if (navigator.onLine) {
-        try {
-            const resp = await fetch('/api/fuel-reception-auto', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(recordPayload)
-            });
-            if (resp.ok) {
-                const data = await resp.json();
-                tempId = data.id;
-                result = true;
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    } else {
-      tempId = Date.now();
-      await saveToQueue('/api/fuel-reception-auto', recordPayload);
-      result = true;
-      showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
-    }
+      if (navigator.onLine) {
+          try {
+              const resp = await fetch('/api/fuel-reception-auto', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(recordPayload)
+              });
+              if (resp.ok) {
+                  const data = await resp.json();
+                  tempId = data.id;
+                  result = true;
+              }
+          } catch (e) {
+              console.error(e);
+          }
+      } else {
+        tempId = Date.now();
+        await saveToQueue('/api/fuel-reception-auto', recordPayload);
+        result = true;
+        showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
+      }
 
-    if (result) {
-      setResultData({ ...recordPayload, id: tempId || Date.now() });
-    } else {
-      showToast('Ошибка при сохранении данных на Сервере.', 'error');
+      if (result) {
+        setResultData({ ...recordPayload, id: tempId || Date.now() });
+      } else {
+        showToast('Ошибка при сохранении данных на Сервере.', 'error');
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -196,7 +202,7 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
       await new Promise(res => setTimeout(res, 100));
       const blob = await htmlToImage.toBlob(element, {
         quality: 0.95,
-        backgroundColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff'
+        backgroundColor: '#0f172a'
       });
 
       if (!blob) return;
@@ -363,9 +369,10 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
             <div className="flex flex-col gap-3 pt-2">
               <button
                 onClick={handleCalculateAndSave}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition-all shadow-md active:scale-[0.98]"
+                disabled={isSaving}
+                className={`w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition-all shadow-md active:scale-[0.98] ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Внести данные
+                {isSaving ? 'Запись...' : 'Внести данные'}
               </button>
               <button
                 onClick={() => setSelectedTank(null)}
@@ -383,7 +390,7 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl flex flex-col items-center">
 
-            <div id="reception-auto-result-modal" className="w-full bg-slate-900 border-none rounded-xl p-5 mb-6 text-white shadow-lg overflow-hidden relative">
+            <div id="reception-auto-result-modal" className="w-full bg-slate-900 border-none rounded-xl p-5 mb-6 text-white shadow-lg overflow-hidden relative" style={{ backgroundColor: '#0f172a' }}>
               <h3 className="text-xl font-bold text-center mb-1 text-white">Прием Топлива АЦ</h3>
               <p className="text-center text-slate-400 text-xs mb-5">
                 Сотрудник: {currentWorkday?.Name} | {resultData.Date}

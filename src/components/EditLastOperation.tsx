@@ -14,6 +14,7 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
   const [formData, setFormData] = useState<any>({});
   const [tanks, setTanks] = useState<any[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -93,6 +94,7 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
     const payload = { operationType: op.operationType, id: op.id, data: { ...formData, Volume: newVol, Mass: newMass } };
     delete payload.data.operationType;
 
+    setIsSaving(true);
     try {
       const res = await fetch('/api/operations/edit-last', {
          method: 'POST',
@@ -107,12 +109,15 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
       }
     } catch(e) {
        showToast('Ошибка сети', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
     const payload = { operationType: op.operationType, id: op.id, action: 'delete' };
 
+    setIsSaving(true);
     try {
       const res = await fetch('/api/operations/edit-last', {
          method: 'POST',
@@ -127,6 +132,8 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
       }
     } catch(e) {
        showToast('Ошибка сети', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -182,8 +189,8 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
             {renderFields()}
          </div>
          <div className="p-6 border-t border-slate-100 dark:border-slate-700 shrink-0 flex flex-col gap-3">
-            <button onClick={handleSave} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-4 rounded-xl transition-all active:scale-95 shadow-md">Сохранить</button>
-            <button onClick={() => setShowDeleteConfirm(true)} className="w-full bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold py-3.5 rounded-xl transition-all active:scale-95">Удалить последнюю операцию</button>
+            <button onClick={handleSave} disabled={isSaving} className={`w-full bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-4 rounded-xl transition-all active:scale-95 shadow-md ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}>{isSaving ? 'Сохранение...' : 'Сохранить'}</button>
+            <button onClick={() => setShowDeleteConfirm(true)} disabled={isSaving} className={`w-full bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold py-3.5 rounded-xl transition-all active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}>Удалить последнюю операцию</button>
          </div>
       </div>
 
@@ -193,8 +200,8 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">Удаление операции</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Вы уверены, что хотите удалить эту операцию из базы данных? Это действие нельзя отменить.</p>
             <div className="flex flex-col gap-3">
-              <button onClick={handleDelete} className="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-3 rounded-xl transition-colors">Да, удалить</button>
-              <button onClick={() => setShowDeleteConfirm(false)} className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-3 rounded-xl transition-colors">Отмена</button>
+              <button onClick={handleDelete} disabled={isSaving} className={`w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-3 rounded-xl transition-colors ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}>{isSaving ? 'Удаление...' : 'Да, удалить'}</button>
+              <button onClick={() => setShowDeleteConfirm(false)} disabled={isSaving} className={`w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-3 rounded-xl transition-colors ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}>Отмена</button>
             </div>
           </div>
         </div>

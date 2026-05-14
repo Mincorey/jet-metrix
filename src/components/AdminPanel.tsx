@@ -24,6 +24,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     const { showToast } = useToast();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Modal states
     const [showAddModal, setShowAddModal] = useState(false);
@@ -92,6 +93,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         }
 
         try {
+            setIsSaving(true);
             const dbRole = newRole === 'Авиатехник' ? 'Avia-Technician' :
                 newRole === 'Старший авиатехник' ? 'Supervisor' : 'Administrator';
 
@@ -118,12 +120,15 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         } catch (error) {
             console.error("Error adding employee:", error);
             showToast("Ошибка соединения с сервером", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleToggleStatus = async (id: number, currentStatus: string) => {
         const newStatus = currentStatus === 'Active' ? 'Archived' : 'Active';
         try {
+            setIsSaving(true);
             const response = await fetch(`/api/employees/${id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -139,12 +144,15 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         } catch (error) {
             console.error("Error updating status:", error);
             showToast("Ошибка соединения с сервером", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleDeleteEmployee = async (id: number) => {
         if (!window.confirm("Удалить сотрудника навсегда?")) return;
         try {
+            setIsSaving(true);
             const response = await fetch(`/api/employees/${id}`, {
                 method: 'DELETE'
             });
@@ -158,6 +166,8 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         } catch (error) {
             console.error("Error deleting employee:", error);
             showToast("Ошибка соединения с сервером", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -174,6 +184,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         }
 
         try {
+            setIsSaving(true);
             const response = await fetch(`/api/employees/${editingEmployee.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -194,6 +205,8 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         } catch (error) {
             console.error("Error editing employee:", error);
             showToast("Ошибка соединения с сервером", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -237,6 +250,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         }
 
         try {
+            setIsSaving(true);
             const method = editingTza ? 'PUT' : 'POST';
             const url = editingTza ? `/api/tza/${editingTza.id}` : '/api/tza';
             const response = await fetch(url, {
@@ -259,12 +273,15 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         } catch (error) {
             console.error("Error saving TZA:", error);
             showToast("Ошибка соединения с сервером", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleDeleteTza = async (id: number) => {
         if (!window.confirm("Вы уверены, что хотите удалить этот ТЗА?")) return;
         try {
+            setIsSaving(true);
             const response = await fetch(`/api/tza/${id}`, { method: 'DELETE' });
             if (response.ok) {
                 await fetchTzas();
@@ -275,11 +292,14 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         } catch (error) {
             console.error("Error deleting TZA:", error);
             showToast("Ошибка соединения с сервером", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleToggleMonitoring = async (id: number, currentStatus: number | undefined) => {
         try {
+            setIsSaving(true);
             const newStatus = currentStatus === 1 ? false : true;
             const response = await fetch(`/api/tza/${id}/monitoring`, {
                 method: 'PUT',
@@ -296,11 +316,14 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         } catch (error) {
             console.error("Ошибка при переключении мониторинга:", error);
             showToast("Ошибка соединения с сервером", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleClearAll = async () => {
         try {
+            setIsSaving(true);
             const response = await fetch('/api/employees/all', {
                 method: 'DELETE'
             });
@@ -314,11 +337,14 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         } catch (error) {
             console.error("Error clearing employees:", error);
             showToast("Ошибка соединения с сервером", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleClearOperationsDB = async () => {
         try {
+            setIsSaving(true);
             const response = await fetch(`/api/database/clear-operations`, {
                 method: 'DELETE',
             });
@@ -331,6 +357,8 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         } catch (error) {
             console.error(error);
             showToast("Ошибка соединения с сервером", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -669,13 +697,15 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
                             <div className="flex gap-3 mt-2">
                                 <button
                                     onClick={handleAddEmployee}
-                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95"
+                                    disabled={isSaving}
+                                    className={`flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
-                                    Добавить
+                                    {isSaving ? 'Добавление...' : 'Добавить'}
                                 </button>
                                 <button
                                     onClick={() => setShowAddModal(false)}
-                                    className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95"
+                                    disabled={isSaving}
+                                    className={`flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
                                     Отмена
                                 </button>
@@ -701,13 +731,15 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
                         <div className="flex gap-3">
                             <button
                                 onClick={handleClearAll}
-                                className="flex-[3] bg-rose-600 hover:bg-rose-700 text-white text-base font-bold py-4 rounded-xl transition-colors shadow-sm active:scale-95"
+                                disabled={isSaving}
+                                className={`flex-[3] bg-rose-600 hover:bg-rose-700 text-white text-base font-bold py-4 rounded-xl transition-colors shadow-sm active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
-                                Да, очистить
+                                {isSaving ? 'Очистка...' : 'Да, очистить'}
                             </button>
                             <button
                                 onClick={() => setShowClearConfirm(false)}
-                                className="flex-[2] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-base font-bold py-4 rounded-xl transition-colors active:scale-95"
+                                disabled={isSaving}
+                                className={`flex-[2] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-base font-bold py-4 rounded-xl transition-colors active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
                                 Отмена
                             </button>
@@ -759,13 +791,15 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
                             <div className="flex gap-3 mt-2">
                                 <button
                                     onClick={handleEditEmployee}
-                                    className="flex-[3] bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95"
+                                    disabled={isSaving}
+                                    className={`flex-[3] bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
-                                    Сохранить
+                                    {isSaving ? 'Сохранение...' : 'Сохранить'}
                                 </button>
                                 <button
                                     onClick={() => setEditingEmployee(null)}
-                                    className="flex-[2] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95"
+                                    disabled={isSaving}
+                                    className={`flex-[2] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
                                     Отмена
                                 </button>
@@ -819,13 +853,15 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
                             <div className="flex gap-3 mt-2">
                                 <button
                                     onClick={handleSaveTza}
-                                    className="flex-[3] bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95"
+                                    disabled={isSaving}
+                                    className={`flex-[3] bg-emerald-600 hover:bg-emerald-700 text-white text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
-                                    Сохранить
+                                    {isSaving ? 'Сохранение...' : 'Сохранить'}
                                 </button>
                                 <button
                                     onClick={() => setShowTzaModal(false)}
-                                    className="flex-[2] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95"
+                                    disabled={isSaving}
+                                    className={`flex-[2] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-base font-bold py-4 rounded-xl transition-all shadow-sm active:scale-95 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
                                     Отмена
                                 </button>
@@ -850,13 +886,15 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
                         <div className="flex gap-3">
                             <button
                                 onClick={handleClearOperationsDB}
-                                className="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-xl transition-colors"
+                                disabled={isSaving}
+                                className={`flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-xl transition-colors ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
-                                Да, очистить
+                                {isSaving ? 'Очистка...' : 'Да, очистить'}
                             </button>
                             <button
                                 onClick={() => setShowClearDbConfirm(false)}
-                                className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-medium py-3 rounded-xl transition-colors"
+                                disabled={isSaving}
+                                className={`flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-medium py-3 rounded-xl transition-colors ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
                                 Отмена
                             </button>
