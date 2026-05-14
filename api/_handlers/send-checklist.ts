@@ -42,9 +42,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await supabase.from('Workdays').update({ Checklist_Sent: 1 }).eq('id', workdayId)
 
       return res.json({ success: true, message: 'Чек-лист успешно отправлен' })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Checklist send error:', error)
-      return sendError(res, 500, 'Не удалось отправить чек-лист')
+      return sendError(res, 500, `Не удалось отправить чек-лист: ${error.message || String(error)}`)
     }
   }
 
