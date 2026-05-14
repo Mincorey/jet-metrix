@@ -3,7 +3,8 @@
   "outputDirectory": "dist",
   "functions": {
     "api/[...path].ts": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "templates/**"
     },
     "api/test.ts": {
       "maxDuration": 60
