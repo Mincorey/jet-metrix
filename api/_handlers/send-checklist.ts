@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabase } from '../_lib/db.js'
 import { sendError } from '../_lib/helpers.js'
 import * as nodemailer from 'nodemailer'
-import * as ExcelJS from 'exceljs'
+import ExcelJS from 'exceljs'
 import * as path from 'path'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
