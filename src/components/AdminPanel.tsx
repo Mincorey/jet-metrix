@@ -33,7 +33,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
 
     // Form states
     const [newName, setNewName] = useState('');
-    const [newRole, setNewRole] = useState<'Авиатехник' | 'Старший авиатехник' | 'Администратор'>('Авиатехник');
+    const [newRole, setNewRole] = useState<'Авиатехник' | 'Водитель-Авиатехник' | 'Старший авиатехник' | 'Администратор'>('Авиатехник');
     const [newPassword, setNewPassword] = useState('');
 
     // Accordion state
@@ -95,6 +95,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         try {
             setIsSaving(true);
             const dbRole = newRole === 'Авиатехник' ? 'Avia-Technician' :
+                newRole === 'Водитель-Авиатехник' ? 'Driver-AT' :
                 newRole === 'Старший авиатехник' ? 'Supervisor' : 'Administrator';
 
             const response = await fetch('/api/employees', {
@@ -365,7 +366,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     const getRoleDisplayName = (role: string) => {
         switch (role) {
             case 'Avia-Technician': return 'Авиатехник';
-            case 'Driver-AT': return 'Водитель/АТ';
+            case 'Driver-AT': return 'Водитель-Авиатехник';
             case 'Supervisor': return 'Ст. авиатехник';
             case 'Administrator': return 'Администратор';
             default: return role;
@@ -664,7 +665,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
                                     Должность
                                 </label>
                                 <div className="flex flex-col gap-2">
-                                    {(['Авиатехник', 'Старший авиатехник', 'Администратор'] as const).map(role => (
+                                    {(['Авиатехник', 'Водитель-Авиатехник', 'Старший авиатехник', 'Администратор'] as const).map(role => (
                                         <button
                                             key={role}
                                             onClick={() => setNewRole(role)}

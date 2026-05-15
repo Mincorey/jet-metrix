@@ -330,7 +330,7 @@ const handleSendChecklist = async () => {
 
   // Filter employees
   const activeTechnicians = employees.filter(
-    (emp) => (emp.Role === 'Avia-Technician' || emp.Role === 'Авиатехник' || emp.Role === 'Driver-AT' || emp.Role === 'Водитель/АТ') && emp.Status === 'Active'
+    (emp) => (emp.Role === 'Avia-Technician' || emp.Role === 'Авиатехник' || emp.Role === 'Driver-AT' || emp.Role === 'Водитель-Авиатехник' || emp.Role === 'Водитель/АТ') && emp.Status === 'Active'
   );
 
   const seniorTechs = employees.filter(
