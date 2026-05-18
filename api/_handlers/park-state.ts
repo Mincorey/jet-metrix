@@ -6,6 +6,22 @@ function sum(rows: any[] | null, field: string): number {
   return (rows || []).reduce((acc, r) => acc + (r[field] || 0), 0)
 }
 
+function parseRuDateTime(dStr: string | null | undefined): number {
+  if (!dStr) return 0
+  const parts = dStr.split(' ')
+  const datePart = parts[0].split('.')
+  const timePart = parts[1] ? parts[1].split(':') : ['00', '00']
+  if (datePart.length === 3) {
+    const year = parseInt(datePart[2], 10)
+    const month = parseInt(datePart[1], 10) - 1
+    const day = parseInt(datePart[0], 10)
+    const hour = parseInt(timePart[0], 10)
+    const minute = parseInt(timePart[1], 10)
+    return new Date(year, month, day, hour, minute).getTime()
+  }
+  return 0
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
@@ -19,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const results = await Promise.all((tanks || []).map(async (tank) => {
         const { data: lastMeasArr } = await supabase
           .from('Daily_Measurements')
-          .select('id, Workday_ID, Volume, Mass, Density, Temperature')
+          .select('id, Workday_ID, Volume, Mass, Density, Temperature, Date')
           .eq('Tank_Name', tank.Name)
           .order('id', { ascending: false })
           .limit(1)
@@ -28,24 +44,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const baseVolume = lastMeas?.Volume ?? 0
         const baseMass = lastMeas?.Mass ?? 0
         const workdayId = lastMeas?.Workday_ID ?? 0
+        const lastMeasTimestamp = parseRuDateTime(lastMeas?.Date)
 
-        const [recRows, recAutoLastMeas, transferInRows, transferOutRows, dispenseTzaRows] = await Promise.all([
-          supabase.from('Fuel_Reception').select('Volume, Mass').eq('Tank_Name', tank.Name).gte('Workday_ID', workdayId),
-          supabase.from('Daily_Measurements').select('Date').eq('Tank_Name', tank.Name).order('id', { ascending: false }).limit(1),
-          supabase.from('In_warehouse').select('Volume, Mass').eq('To_Tank', tank.Name).gte('Workday_ID', workdayId),
-          supabase.from('In_warehouse').select('Volume, Mass').eq('From_Tank', tank.Name).gte('Workday_ID', workdayId),
-          supabase.from('Fuel_Dispensing_TZA').select('Volume, Mass').eq('Tank_Name', tank.Name).gte('Workday_ID', workdayId),
+        const [recRows, transferInRows, transferOutRows, dispenseTzaRows] = await Promise.all([
+          supabase.from('Fuel_Reception').select('Volume, Mass').eq('Tank_Name', tank.Name).gt('Workday_ID', workdayId),
+          supabase.from('In_warehouse').select('Volume, Mass').eq('To_Tank', tank.Name).gt('Workday_ID', workdayId),
+          supabase.from('In_warehouse').select('Volume, Mass').eq('From_Tank', tank.Name).gt('Workday_ID', workdayId),
+          supabase.from('Fuel_Dispensing_TZA').select('Volume, Mass').eq('Tank_Name', tank.Name).gt('Workday_ID', workdayId),
         ])
 
-        const lastMeasDate = recAutoLastMeas.data?.[0]?.Date ?? '00.00.0000'
         const { data: recAutoRows } = await supabase
           .from('Fuel_Reception_Auto')
-          .select('Volume, Mass')
+          .select('Volume, Mass, Date')
           .eq('Tank_Name', tank.Name)
-          .gte('Date', lastMeasDate)
 
-        const totalAdded = sum(recRows.data, 'Volume') + sum(recAutoRows, 'Volume') + sum(transferInRows.data, 'Volume')
-        const totalMassAdded = sum(recRows.data, 'Mass') + sum(recAutoRows, 'Mass') + sum(transferInRows.data, 'Mass')
+        const filteredRecAutoRows = (recAutoRows || []).filter(r => parseRuDateTime(r.Date) > lastMeasTimestamp)
+
+        const totalAdded = sum(recRows.data, 'Volume') + sum(filteredRecAutoRows, 'Volume') + sum(transferInRows.data, 'Volume')
+        const totalMassAdded = sum(recRows.data, 'Mass') + sum(filteredRecAutoRows, 'Mass') + sum(transferInRows.data, 'Mass')
         const totalRemoved = sum(transferOutRows.data, 'Volume') + sum(dispenseTzaRows.data, 'Volume')
         const totalMassRemoved = sum(transferOutRows.data, 'Mass') + sum(dispenseTzaRows.data, 'Mass')
 

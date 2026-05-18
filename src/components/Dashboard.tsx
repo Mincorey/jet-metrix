@@ -175,7 +175,8 @@ export default function Dashboard({ onBack }: DashboardProps) {
   const rgs100MaxDomain = rgs100Balances.length > 0 ? Math.max(...rgs100Balances.map((d: any) => d.maxCapacity)) : 110000;
 
   return (
-    <div id="dashboard-content" className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 pt-14 pb-20 font-sans w-full max-w-md mx-auto transition-colors duration-200 flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
+      <div id="dashboard-content" className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 pt-14 pb-20 font-sans w-full max-w-md mx-auto transition-colors duration-200 flex flex-col">
       <button 
         onClick={onBack} 
         className="mb-6 flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-xl transition-all w-fit font-medium text-sm active:scale-95"
@@ -467,6 +468,7 @@ export default function Dashboard({ onBack }: DashboardProps) {
           <p className="text-rose-500">Не удалось загрузить данные.</p>
         </div>
       )}
+      </div>
     </div>
   );
 }

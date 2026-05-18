@@ -99,9 +99,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const ts = parseRuDate(r.Date)
         if (ts < periodStartTs || ts > periodEndTs) return
         if (!r.Density || r.Density <= 0) return
+        let density = r.Density
+        while (density > 2) {
+          density /= 10
+        }
         const shortDate = r.Date.substring(0, 5)
         if (!densityMap[shortDate]) densityMap[shortDate] = { date: shortDate, timestamp: ts, sum: 0, count: 0 }
-        densityMap[shortDate].sum += r.Density
+        densityMap[shortDate].sum += density
         densityMap[shortDate].count += 1
       })
 
