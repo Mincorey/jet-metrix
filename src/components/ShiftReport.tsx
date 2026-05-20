@@ -15,12 +15,23 @@ interface ShiftReportProps {
   onBack: () => void;
 }
 
+interface AggregatedDateReport {
+  Date: string;
+  Fuel_Received_L: number;
+  Fuel_Received_KG: number;
+  Fuel_Issued_TZA_L: number;
+  Fuel_Issued_TZA_KG: number;
+  Fuel_Issued_VS_L: number;
+  Fuel_Issued_VS_KG: number;
+}
+
 export default function ShiftReport({ currentWorkday, onBack }: ShiftReportProps) {
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [reportData, setReportData] = useState<WorkdayRecord[] | null>(null);
+  const [reportData, setReportData] = useState<WorkdayRecord[] | AggregatedDateReport[] | null>(null);
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [reportMode, setReportMode] = useState<'shift' | 'date'>('shift');
   const resultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,7 +50,83 @@ export default function ShiftReport({ currentWorkday, onBack }: ShiftReportProps
     fetchRecords();
   }, []);
 
-  const handleGenerateReport = () => {
+  // 🚀 НОВОЕ: Функция для агрегирования операций по ДАТЕ (независимо от Workday_ID)
+  const getDateBasedReport = async (dateStrings: string[]): Promise<AggregatedDateReport[]> => {
+    try {
+      const [tzaData, vsData, recData, autoRecData, transferData] = await Promise.all([
+        fetch('/api/fuel-dispensing-tza').then(r => r.json()),
+        fetch('/api/fuel-dispensing-vs').then(r => r.json()),
+        fetch('/api/fuel-reception').then(r => r.json()),
+        fetch('/api/fuel-reception-auto').then(r => r.json()),
+        fetch('/api/in-warehouse').then(r => r.json()),
+      ]);
+
+      // Агрегируем все операции по датам
+      const aggregated: { [date: string]: AggregatedDateReport } = {};
+
+      dateStrings.forEach(date => {
+        aggregated[date] = {
+          Date: date,
+          Fuel_Received_L: 0,
+          Fuel_Received_KG: 0,
+          Fuel_Issued_TZA_L: 0,
+          Fuel_Issued_TZA_KG: 0,
+          Fuel_Issued_VS_L: 0,
+          Fuel_Issued_VS_KG: 0,
+        };
+      });
+
+      // Суммируем ТЗА операции
+      tzaData.forEach((op: any) => {
+        const opDate = op.Date?.split(' ')[0];
+        if (aggregated[opDate]) {
+          aggregated[opDate].Fuel_Issued_TZA_L += Number(op.Volume) || 0;
+          aggregated[opDate].Fuel_Issued_TZA_KG += Number(op.Mass) || 0;
+        }
+      });
+
+      // Суммируем ВС операции
+      vsData.forEach((op: any) => {
+        const opDate = op.Date?.split(' ')[0];
+        if (aggregated[opDate]) {
+          aggregated[opDate].Fuel_Issued_VS_L += Number(op.Volume) || 0;
+          aggregated[opDate].Fuel_Issued_VS_KG += Number(op.Mass) || 0;
+        }
+      });
+
+      // Суммируем прием топлива
+      recData.forEach((op: any) => {
+        const opDate = op.Date?.split(' ')[0];
+        if (aggregated[opDate]) {
+          aggregated[opDate].Fuel_Received_L += Number(op.Volume) || 0;
+          aggregated[opDate].Fuel_Received_KG += Number(op.Mass) || 0;
+        }
+      });
+
+      autoRecData.forEach((op: any) => {
+        const opDate = op.Date?.split(' ')[0];
+        if (aggregated[opDate]) {
+          aggregated[opDate].Fuel_Received_L += Number(op.Volume) || 0;
+          aggregated[opDate].Fuel_Received_KG += Number(op.Mass) || 0;
+        }
+      });
+
+      transferData.forEach((op: any) => {
+        const opDate = op.Date?.split(' ')[0];
+        if (aggregated[opDate]) {
+          aggregated[opDate].Fuel_Received_L += Number(op.Volume) || 0;
+          aggregated[opDate].Fuel_Received_KG += Number(op.Mass) || 0;
+        }
+      });
+
+      return Object.values(aggregated);
+    } catch (error) {
+      console.error("Ошибка при получении данных операций:", error);
+      return [];
+    }
+  };
+
+  const handleGenerateReport = async () => {
     if (selectedDates.length === 0) {
       alert('Выберите хотя бы одну дату');
       return;
@@ -48,13 +135,17 @@ export default function ShiftReport({ currentWorkday, onBack }: ShiftReportProps
     // Convert selected dates to strings in format "dd.MM.yyyy"
     const selectedDateStrings = selectedDates.map(date => format(date, 'dd.MM.yyyy'));
 
-    // Filter records from the server response
-    const filteredRecords = records.filter(record => {
-      // Record Date is in "dd.MM.yyyy" format
-      return selectedDateStrings.includes(record.Date);
-    });
-
-    setReportData(filteredRecords);
+    if (reportMode === 'shift') {
+      // 📊 Режим "По сменам": показываем данные из таблицы Workdays
+      const filteredRecords = records.filter(record => {
+        return selectedDateStrings.includes(record.Date);
+      });
+      setReportData(filteredRecords);
+    } else {
+      // 📈 Режим "По датам": агрегируем операции напрямую, игнорируя Workday_ID
+      const aggregatedData = await getDateBasedReport(selectedDateStrings);
+      setReportData(aggregatedData);
+    }
   };
 
   const handleShare = async () => {
@@ -109,13 +200,14 @@ export default function ShiftReport({ currentWorkday, onBack }: ShiftReportProps
     });
 
     // 3. Заполнение данными
-    reportData.forEach((row) => {
-      const isClosed = row.Workday_Status === 'Closed';
-      const statusText = isClosed ? 'Закрыта' : 'Открыта';
+    reportData.forEach((row: any) => {
+      // Поддержка обоих типов отчетов (Shift и Date-based)
+      const isClosed = (row as any).Workday_Status === 'Closed';
+      const statusText = reportMode === 'shift' ? (isClosed ? 'Закрыта' : 'Открыта') : 'Агрегат по дате';
 
       const newRow = worksheet.addRow({
         date: row.Date || '',
-        name: row.Name || '',
+        name: (row as any).Name || (reportMode === 'date' ? 'Все сотрудники' : ''),
         recL: row.Fuel_Received_L ? Number(row.Fuel_Received_L) : '',
         recKg: row.Fuel_Received_KG ? Number(row.Fuel_Received_KG) : '',
         tzaL: row.Fuel_Issued_TZA_L ? Number(row.Fuel_Issued_TZA_L) : '',
@@ -128,24 +220,28 @@ export default function ShiftReport({ currentWorkday, onBack }: ShiftReportProps
       // Стилизация строк с данными
       newRow.eachCell((cell, colNumber) => {
         cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-        
+
         let align = 'center'; // Дата и Статус (1, 9)
         if (colNumber === 2) align = 'left'; // Сотрудник
         if (colNumber >= 3 && colNumber <= 8) align = 'right'; // Цифры
-        
+
         cell.alignment = { horizontal: align as any, vertical: 'middle' };
 
         // Форматирование чисел для объемов и масс
         if (typeof cell.value === 'number') {
-          cell.numFmt = '0.##'; 
+          cell.numFmt = '0.##';
         }
 
         // Цветовое кодирование для колонки Статус (9)
         if (colNumber === 9) {
-          if (cell.value === 'Открыта') {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } }; // Ярко-красный
-          } else if (cell.value === 'Закрыта') {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF92D050' } }; // Светло-зеленый
+          if (reportMode === 'shift') {
+            if (cell.value === 'Открыта') {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
+            } else if (cell.value === 'Закрыта') {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF92D050' } };
+            }
+          } else {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
           }
         }
       });
@@ -160,17 +256,21 @@ export default function ShiftReport({ currentWorkday, onBack }: ShiftReportProps
   const handleCopy = () => {
     if (!reportData) return;
 
-    let text = 'Сменный отчет\n\n';
+    let text = reportMode === 'shift' ? 'Сменный отчет\n\n' : 'Агрегированный отчет по датам\n\n';
     if (reportData.length === 0) {
       text += 'Нет данных за выбранные даты.\n';
     } else {
-      reportData.forEach(row => {
+      reportData.forEach((row: any) => {
         text += `Дата: ${row.Date}\n`;
-        text += `Сотрудник: ${row.Name}\n`;
+        if (reportMode === 'shift' && row.Name) {
+          text += `Сотрудник: ${row.Name}\n`;
+        }
         text += `Принято: ${row.Fuel_Received_L} л / ${row.Fuel_Received_KG} кг\n`;
         text += `Выдано в ТЗА: ${row.Fuel_Issued_TZA_L} л / ${row.Fuel_Issued_TZA_KG} кг\n`;
         text += `Выдано в ВС: ${row.Fuel_Issued_VS_L} л / ${row.Fuel_Issued_VS_KG} кг\n`;
-        text += `Статус: ${row.Workday_Status === 'Open' ? 'Открыта' : 'Закрыта'}\n`;
+        if (reportMode === 'shift' && row.Workday_Status) {
+          text += `Статус: ${row.Workday_Status === 'Open' ? 'Открыта' : 'Закрыта'}\n`;
+        }
         text += `------------------------\n`;
       });
     }
@@ -192,6 +292,32 @@ export default function ShiftReport({ currentWorkday, onBack }: ShiftReportProps
             Выберите дату или несколько дат
           </p>
         </div>
+
+        {/* 🚀 НОВОЕ: Селектор режима отчета */}
+        {!loading && (
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setReportMode('shift')}
+              className={`flex-1 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                reportMode === 'shift'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+              }`}
+            >
+              По смене
+            </button>
+            <button
+              onClick={() => setReportMode('date')}
+              className={`flex-1 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                reportMode === 'date'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+              }`}
+            >
+              По дате
+            </button>
+          </div>
+        )}
 
         <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 flex justify-center">
           <DayPicker
@@ -237,25 +363,36 @@ export default function ShiftReport({ currentWorkday, onBack }: ShiftReportProps
 
               {/* Блок для скриншота */}
               <div ref={resultRef} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mb-6">
-                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 text-center mb-4">Сменный отчет</h3>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 text-center mb-4">
+                  {reportMode === 'shift' ? 'Сменный отчет' : 'Отчет по датам'}
+                </h3>
 
                 <div className="space-y-6">
                   {reportData.length === 0 ? (
                     <p className="text-center text-slate-500 dark:text-slate-400 py-4">Нет данных за выбранные даты</p>
                   ) : (
-                    reportData.map((row, idx) => (
+                    reportData.map((row: any, idx) => (
                       <div key={idx} className="border-b border-slate-200 dark:border-slate-700 pb-4 last:border-0 last:pb-0">
                         <div className="flex justify-between items-center mb-2">
                           <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{row.Date}</span>
-                          <span className={`text-xs font-medium px-2 py-1 rounded-md ${row.Workday_Status === 'Open' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}`}>
-                            {row.Workday_Status === 'Open' ? 'Открыта' : 'Закрыта'}
-                          </span>
+                          {reportMode === 'shift' && (
+                            <span className={`text-xs font-medium px-2 py-1 rounded-md ${row.Workday_Status === 'Open' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}`}>
+                              {row.Workday_Status === 'Open' ? 'Открыта' : 'Закрыта'}
+                            </span>
+                          )}
+                          {reportMode === 'date' && (
+                            <span className="text-xs font-medium px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                              Агрегат
+                            </span>
+                          )}
                         </div>
                         <div className="space-y-1.5 pl-2 border-l-2 border-slate-200 dark:border-slate-700">
-                          <div className="flex justify-between items-center">
-                            <span className="text-slate-500 dark:text-slate-400 text-xs">Сотрудник:</span>
-                            <span className="font-medium text-slate-700 dark:text-slate-300 text-xs text-right max-w-[150px] truncate">{row.Name}</span>
-                          </div>
+                          {reportMode === 'shift' && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-500 dark:text-slate-400 text-xs">Сотрудник:</span>
+                              <span className="font-medium text-slate-700 dark:text-slate-300 text-xs text-right max-w-[150px] truncate">{row.Name}</span>
+                            </div>
+                          )}
 
                           <div className="pt-2">
                             <p className="text-slate-800 dark:text-slate-200 font-semibold text-xs mb-1">Принято:</p>

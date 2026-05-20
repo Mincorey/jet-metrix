@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(node recovery_execution.mjs)",
+      "Bash(node recovery_restore.mjs)",
+      "Bash(node verify_recovery.mjs)"
     ]
   }
 }
