@@ -12,3 +12,5 @@ coverage/
 *.db-wal
 *.bak
 OLD/
+.claude/
+.vercel/
