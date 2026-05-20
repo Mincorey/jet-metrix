@@ -7,7 +7,8 @@ import {
   openWorkdayDB,
   closeWorkdayDB,
   deleteWorkday,
-  getOpenWorkday
+  getOpenWorkday,
+  loadOpenWorkdaysFromDB
 } from './data/WORKDAY';
 import { fuelReceptionTable } from './data/Fuel_Reception';
 import { fuelDispensingTZATable } from './data/Fuel_Dispensing_TZA';
@@ -146,6 +147,9 @@ export default function App() {
     loadEmployees();
 
     const restoreSession = async () => {
+      // 🚀 Загружаем открытые смены из БД при старте приложения
+      await loadOpenWorkdaysFromDB();
+
       const savedUserStr = localStorage.getItem('sgsm_saved_user');
       if (savedUserStr) {
         try {

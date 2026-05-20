@@ -15,6 +15,26 @@ export interface WorkdayRecord {
 // Локальное хранилище (временно оставляем для старых функций закрытия смены)
 export let workdayData: WorkdayRecord[] = [];
 
+// 🚀 Загрузить открытые смены из БД (вызывать при инициализации приложения)
+export const loadOpenWorkdaysFromDB = async (): Promise<WorkdayRecord[]> => {
+  try {
+    const response = await fetch('/api/workdays');
+    const allWorkdays: WorkdayRecord[] = await response.json();
+
+    // Фильтруем только открытые смены
+    const openWorkdays = allWorkdays.filter(w => w.Workday_Status === 'Open');
+
+    // Обновляем локальный массив с открытыми сменами из БД
+    workdayData = openWorkdays;
+
+    console.log(`✅ Загружено ${openWorkdays.length} открытых смен из БД`);
+    return openWorkdays;
+  } catch (error) {
+    console.error("❌ Ошибка при загрузке открытых смен из БД:", error);
+    return [];
+  }
+};
+
 // 🚀 НОВАЯ ФУНКЦИЯ: Звоним Диспетчеру, чтобы он открыл смену в БД
 export const openWorkdayDB = async (name: string): Promise<WorkdayRecord | null> => {
   try {
