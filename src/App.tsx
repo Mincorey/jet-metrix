@@ -1070,6 +1070,8 @@ const handleSendChecklist = async () => {
 
               <input
                 type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 maxLength={6}
                 value={authPin}
                 onChange={(e) => setAuthPin(e.target.value.replace(/\D/g, ''))}
