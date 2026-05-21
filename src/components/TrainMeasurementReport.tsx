@@ -24,6 +24,7 @@ interface TrainRecord {
     Temperature: number;
     Volume: number;
     Mass: number;
+    Density_20?: number | null;
 }
 
 interface TrainMeasurementReportProps {
@@ -110,6 +111,7 @@ export default function TrainMeasurementReport({ currentWorkday, onBack }: Train
             { header: 'Замер (мм)', key: 'level', width: 15 },
             { header: 'Плотность (г/см³)', key: 'density', width: 20 },
             { header: 'Темп. (°C)', key: 'temp', width: 15 },
+            { header: 'Пл. при 20° (кг/м³)', key: 'density20', width: 22 },
             { header: 'Объем (л)', key: 'volume', width: 18 },
             { header: 'Масса (кг)', key: 'mass', width: 18 }
         ];
@@ -141,6 +143,7 @@ export default function TrainMeasurementReport({ currentWorkday, onBack }: Train
                 level: row.Average_Level || '-',
                 density: row.Density ? Number(row.Density) : '-',
                 temp: row.Temperature ? Number(row.Temperature) : '-',
+                density20: row.Density_20 != null ? Number(row.Density_20) : '-',
                 volume: vol,
                 mass: mass
             });
@@ -159,7 +162,8 @@ export default function TrainMeasurementReport({ currentWorkday, onBack }: Train
                 if (typeof cell.value === 'number') {
                     if (colNumber === 6) cell.numFmt = '0.0000'; // Плотность
                     else if (colNumber === 7) cell.numFmt = '0.0'; // Температура
-                    else if (colNumber >= 8) cell.numFmt = '#,##0.00'; // Объем и масса
+                    else if (colNumber === 8) cell.numFmt = '0.0'; // Плотность при 20°
+                    else if (colNumber >= 9) cell.numFmt = '#,##0.00'; // Объем и масса
                 }
             });
         });
@@ -178,7 +182,7 @@ export default function TrainMeasurementReport({ currentWorkday, onBack }: Train
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5B9BD5' } };
                 cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
                 cell.alignment = { horizontal: 'right', vertical: 'middle' };
-                if (colNumber >= 8) cell.numFmt = '#,##0.00';
+                if (colNumber >= 9) cell.numFmt = '#,##0.00';
             }
         });
 
@@ -206,6 +210,7 @@ export default function TrainMeasurementReport({ currentWorkday, onBack }: Train
                 text += `Замер: ${row.Average_Level} мм\n`;
                 text += `Плотность: ${row.Density} г/см³\n`;
                 text += `Температура: ${row.Temperature} °C\n`;
+                text += `Плотность при 20°С: ${row.Density_20 != null ? row.Density_20 + ' кг/м³' : 'н/д'}\n`;
                 text += `Объем: ${row.Volume} л.\n`;
                 text += `Масса: ${row.Mass} кг.\n`;
                 text += `------------------------\n`;
@@ -307,6 +312,10 @@ export default function TrainMeasurementReport({ currentWorkday, onBack }: Train
                                                     <div className="flex justify-between items-center">
                                                         <span className="text-slate-500 dark:text-slate-400 text-xs">Плотность / Темп.:</span>
                                                         <span className="font-mono font-medium text-slate-700 dark:text-slate-300 text-xs">{row.Density} г/см³ / {row.Temperature}°C</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-slate-500 dark:text-slate-400 text-xs">Плотность при 20°С:</span>
+                                                        <span className="font-mono font-medium text-slate-700 dark:text-slate-300 text-xs">{row.Density_20 != null ? `${row.Density_20} кг/м³` : '—'}</span>
                                                     </div>
                                                     <div className="flex justify-between items-center">
                                                         <span className="text-slate-500 dark:text-slate-400 text-xs">Объем:</span>
