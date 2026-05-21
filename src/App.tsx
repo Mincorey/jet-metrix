@@ -59,6 +59,7 @@ export default function App() {
   const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
   const [sendingChecklist, setSendingChecklist] = useState(false);
   const [isClosingShift, setIsClosingShift] = useState(false);
+  const [shiftsLoaded, setShiftsLoaded] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -149,6 +150,7 @@ export default function App() {
     const restoreSession = async () => {
       // 🚀 Загружаем открытые смены из БД при старте приложения
       await loadOpenWorkdaysFromDB();
+      setShiftsLoaded(true);
 
       const savedUserStr = localStorage.getItem('sgsm_saved_user');
       if (savedUserStr) {
@@ -917,7 +919,7 @@ const handleSendChecklist = async () => {
     return <TankParkMap onBack={() => setCurrentPage('start')} />;
   }
 
-  const openShift = getOpenWorkday();
+  const openShift = shiftsLoaded ? getOpenWorkday() : null;
 
   return (
     <>
