@@ -42,8 +42,9 @@ import handler_37 from './_handlers/tza/[id]/monitoring.js';
 import handler_38 from './_handlers/tza/[id].js';
 import handler_39 from './_handlers/tza.js';
 import handler_40 from './_handlers/workdays/close.js';
-import handler_41 from './_handlers/workdays/start.js';
-import handler_42 from './_handlers/workdays.js';
+import handler_41 from './_handlers/workdays/delete.js';
+import handler_42 from './_handlers/workdays/start.js';
+import handler_43 from './_handlers/workdays.js';
 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -158,8 +159,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     if (route === 'tza') return await handler_39(req, res);
     if (route === 'workdays/close') return await handler_40(req, res);
-    if (route === 'workdays/start') return await handler_41(req, res);
-    if (route === 'workdays') return await handler_42(req, res);
+    if (route === 'workdays/delete') return await handler_41(req, res);
+    if (route === 'workdays/start') return await handler_42(req, res);
+    if (route === 'workdays') return await handler_43(req, res);
 
     return res.status(404).json({ error: `Маршрут API /api/${route} не найден`, isCustomRouter: true, pathArray, route });
   } catch (error) {

@@ -21,13 +21,20 @@ export const loadOpenWorkdaysFromDB = async (): Promise<WorkdayRecord[]> => {
     const response = await fetch('/api/workdays');
     const allWorkdays: WorkdayRecord[] = await response.json();
 
-    // Фильтруем только открытые смены
-    const openWorkdays = allWorkdays.filter(w => w.Workday_Status === 'Open');
+    // Дата устройства в формате DD.MM.YYYY — тот же формат, что использует openWorkdayDB.
+    // Фильтрация делается на клиенте (не на сервере), чтобы избежать расхождения часовых поясов
+    // (сервер Vercel UTC-4, устройство UTC+3).
+    const now = new Date();
+    const todayStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
 
-    // Обновляем локальный массив с открытыми сменами из БД
+    // Только 'Open' смены СЕГОДНЯШНЕГО дня — старые зависшие записи игнорируются
+    const openWorkdays = allWorkdays.filter(
+      w => w.Workday_Status === 'Open' && w.Date === todayStr
+    );
+
     workdayData = openWorkdays;
 
-    console.log(`✅ Загружено ${openWorkdays.length} открытых смен из БД`);
+    console.log(`✅ Загружено ${openWorkdays.length} открытых смен из БД (${todayStr})`);
     return openWorkdays;
   } catch (error) {
     console.error("❌ Ошибка при загрузке открытых смен из БД:", error);
@@ -88,10 +95,21 @@ export const closeWorkdayDB = async (id: number) => {
   }
 };
 
-export const deleteWorkday = (id: number) => {
+export const deleteWorkday = async (id: number) => {
+  try {
+    const response = await fetch('/api/workdays/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    const result = await response.json();
+    console.log('✅ Смена помечена как удалённая на сервере:', result);
+  } catch (error) {
+    console.error('❌ Ошибка при удалении смены на сервере:', error);
+  }
   workdayData = workdayData.filter(w => w.id !== id);
 };
 
 export const getOpenWorkday = () => {
-  return workdayData.find(w => w.Workday_Status !== 'Closed') || null;
+  return workdayData.find(w => w.Workday_Status === 'Open') || null;
 };
