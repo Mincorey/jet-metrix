@@ -4,8 +4,18 @@ import { sendError } from '../../_lib/helpers.js'
 
 function parseRuDate(dStr: string): number {
   if (!dStr) return 0
-  const p = dStr.split('.')
-  if (p.length === 3) return new Date(`${p[2]}-${p[1]}-${p[0]}T00:00:00`).getTime()
+  const parts = dStr.split(' ')
+  const datePart = parts[0].split('.')
+  const timePart = parts[1] ? parts[1].split(':') : ['00', '00']
+  if (datePart.length === 3) {
+    const year = parseInt(datePart[2], 10)
+    const month = parseInt(datePart[1], 10) - 1
+    const day = parseInt(datePart[0], 10)
+    const hour = parseInt(timePart[0], 10)
+    const minute = parseInt(timePart[1], 10)
+    const ts = new Date(year, month, day, hour, minute).getTime()
+    return isNaN(ts) ? 0 : ts
+  }
   return 0
 }
 
