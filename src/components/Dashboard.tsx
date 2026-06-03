@@ -197,7 +197,7 @@ export default function Dashboard({ onBack }: DashboardProps) {
       </div>
 
       {/* Period Filter */}
-      <div className="flex gap-2 mb-8 overflow-x-auto pb-2 pdf-section">
+      <div className="flex gap-2 mb-8 overflow-x-auto pb-2 pdf-section scrollbar-custom">
         {[
           { id: 'yesterday', label: 'Вчера' },
           { id: 'today', label: 'Сегодня' },
