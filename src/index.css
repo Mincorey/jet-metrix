@@ -1,3 +1,45 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom scrollbar styling */
+.scrollbar-custom::-webkit-scrollbar {
+  height: 5px;
+  width: 5px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.03);
+  border-radius: 9999px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 9999px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+.dark .scrollbar-custom::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.dark .scrollbar-custom::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+.dark .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* Firefox support */
+.scrollbar-custom {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) rgba(15, 23, 42, 0.03);
+}
+
+.dark .scrollbar-custom {
+  scrollbar-color: rgba(148, 163, 184, 0.25) rgba(255, 255, 255, 0.01);
+}
