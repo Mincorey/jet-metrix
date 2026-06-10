@@ -7,7 +7,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     try {
-      const { data, error } = await supabase.from('Fuel_Dispensing_VS').select('*').order('id', { ascending: false })
+      let query = supabase.from('Fuel_Dispensing_VS').select('*')
+      const datesParam = req.query.dates as string
+      if (datesParam) {
+        const dates = datesParam.split(',').filter(Boolean)
+        if (dates.length > 0) {
+          const filterStr = dates.map(d => `Date.like.${d}%`).join(',')
+          query = query.or(filterStr)
+        }
+      }
+      const { data, error } = await query.order('id', { ascending: false })
       if (error) throw error
       return res.json(data)
     } catch (error) {

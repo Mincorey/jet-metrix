@@ -19,22 +19,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const results = await Promise.all(
         OPERATION_TABLES.map(({ table, type }) => {
-          // If table is Trains, we might not have Workday_ID saved properly in the DB, but we try anyway.
-          let query = supabase.from(table).select('*').order('id', { ascending: false }).limit(10)
-          
-          if (table !== 'Trains' && table !== 'In_warehouse') {
-             query = query.eq('Workday_ID', workdayId)
-          }
-
-          return query.then(({ data, error }) => {
-            if (error) {
-              console.error(`Error querying ${table}:`, error.message);
-              return null;
-            }
-            // Find the first operation belonging to this workday (we check Name or Workday_ID to be safe)
-            const op = data?.find(d => String(d.Workday_ID) === String(workdayId)) || data?.[0];
-            return op ? { ...op, operationType: type } : null;
-          });
+          return supabase
+            .from(table)
+            .select('*')
+            .eq('Workday_ID', workdayId)
+            .order('id', { ascending: false })
+            .limit(1)
+            .then(({ data, error }) => {
+              if (error) {
+                console.error(`Error querying ${table}:`, error.message);
+                return null;
+              }
+              const op = data?.[0];
+              return op ? { ...op, operationType: type } : null;
+            });
         })
       )
 

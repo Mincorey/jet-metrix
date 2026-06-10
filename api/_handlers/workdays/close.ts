@@ -18,8 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const [recRows, recAutoRows, transferRows, tzaRows, vsRows] = await Promise.all([
         supabase.from('Fuel_Reception').select('Volume, Mass').eq('Workday_ID', id),
-        supabase.from('Fuel_Reception_Auto').select('Volume, Mass, Date')
-          .eq('Date', workday?.Date ?? ''),
+        supabase.from('Fuel_Reception_Auto').select('Volume, Mass').eq('Workday_ID', id),
         supabase.from('In_warehouse').select('Volume, Mass').eq('Workday_ID', id),
         supabase.from('Fuel_Dispensing_TZA').select('Volume, Mass').eq('Workday_ID', id),
         supabase.from('Fuel_Dispensing_VS').select('Volume, Mass').eq('Workday_ID', id),

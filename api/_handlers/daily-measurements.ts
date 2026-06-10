@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           Tank_Name: d.Tank_Name, Level_1: d.Level_1, Level_2: d.Level_2,
           Level_3: d.Level_3, Average_Level: d.Average_Level,
           Density: d.Density, Temperature: d.Temperature,
-          Volume: d.Volume, Mass: d.Mass,
+          Volume: d.Volume, Mass: d.Mass, Timestamp: Date.now(),
         })
         .select().single()
       if (error) throw error

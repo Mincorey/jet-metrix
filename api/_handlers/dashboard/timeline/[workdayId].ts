@@ -13,20 +13,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     try {
-      const { data: workday } = await supabase
-        .from('Workdays').select('Date').eq('id', workdayId).single()
-      if (!workday?.Date) return res.json([])
-
-      const datePrefix = String(workday.Date).substring(0, 10)
-      const pattern = `${datePrefix}%`
-
       const [r1, r2, r3, r4, r5, r6] = await Promise.all([
-        supabase.from('Fuel_Reception').select('*').like('Date', pattern),
-        supabase.from('Fuel_Reception_Auto').select('*').like('Date', pattern),
-        supabase.from('Fuel_Dispensing_TZA').select('*').like('Date', pattern),
-        supabase.from('Fuel_Dispensing_VS').select('*').like('Date', pattern),
-        supabase.from('Daily_Measurements').select('*').like('Date', pattern),
-        supabase.from('Trains').select('*').like('Date', pattern),
+        supabase.from('Fuel_Reception').select('*').eq('Workday_ID', workdayId),
+        supabase.from('Fuel_Reception_Auto').select('*').eq('Workday_ID', workdayId),
+        supabase.from('Fuel_Dispensing_TZA').select('*').eq('Workday_ID', workdayId),
+        supabase.from('Fuel_Dispensing_VS').select('*').eq('Workday_ID', workdayId),
+        supabase.from('Daily_Measurements').select('*').eq('Workday_ID', workdayId),
+        supabase.from('Trains').select('*').eq('Workday_ID', workdayId),
       ])
 
       const sources = [

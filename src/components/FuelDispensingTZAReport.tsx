@@ -19,44 +19,28 @@ interface FuelDispensingTZAReportProps {
 export default function FuelDispensingTZAReport({ currentWorkday, onBack }: FuelDispensingTZAReportProps) {
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [reportData, setReportData] = useState<FuelDispensingTZARecord[] | null>(null);
-  const [records, setRecords] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const fetchRecords = async () => {
-      try {
-        const response = await fetch('/api/fuel-dispensing-tza');
-        const data = await response.json();
-        setRecords(data);
-      } catch (error) {
-        console.error("Ошибка при загрузке журнала ТЗА:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecords();
-  }, []);
-
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     if (selectedDates.length === 0) {
       alert('Выберите хотя бы одну дату');
       return;
     }
 
-    // Convert selected dates to strings in format "dd.MM.yyyy"
-    const selectedDateStrings = selectedDates.map(date => format(date, 'dd.MM.yyyy'));
-
-    // Filter records from the server response
-    const filteredRecords = records.filter(record => {
-      // Record Date might be "dd.MM.yyyy" or "dd.MM.yyyy HH:mm"
-      const recordDateOnly = record.Date ? record.Date.split(' ')[0] : '';
-      return selectedDateStrings.includes(recordDateOnly);
-    });
-
-    setReportData(filteredRecords);
+    setLoading(true);
+    try {
+      const selectedDateStrings = selectedDates.map(date => format(date, 'dd.MM.yyyy'));
+      const response = await fetch(`/api/fuel-dispensing-tza?dates=${selectedDateStrings.join(',')}`);
+      const data = await response.json();
+      setReportData(data);
+    } catch (error) {
+      console.error("Ошибка при загрузке журнала ТЗА:", error);
+      alert("Не удалось загрузить данные для отчета");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleShare = async () => {

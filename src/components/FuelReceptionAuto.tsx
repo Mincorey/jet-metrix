@@ -122,6 +122,7 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
       const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
 
       const recordPayload = {
+        Workday_ID: currentWorkday.id,
         Date: currentDate,
         Name: currentWorkday.Name,
         Gos_Number: gosNumber,

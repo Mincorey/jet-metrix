@@ -15,7 +15,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const backup: Record<string, any[]> = {}
       for (const table of TABLES) {
-        const { data } = await supabase.from(table).select('*').order('id' as any)
+        const orderBy = table === 'Settings' ? 'key' : 'id'
+        const { data } = await supabase.from(table).select('*').order(orderBy as any)
         backup[table] = data || []
       }
 

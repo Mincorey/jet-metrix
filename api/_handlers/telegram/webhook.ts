@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabase } from '../../_lib/db.js'
 import { sendError } from '../../_lib/helpers.js'
 import { sendTelegramMessage } from '../../_lib/telegram.js'
+import { getParkStateData } from '../park-state.js'
 
 async function getTelegramSettings() {
   const { data } = await supabase
@@ -50,11 +51,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           )
         }
       } else if (command === 'stock') {
-        const [tanksRes, tzaRes] = await Promise.all([
-          fetch(`${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/park-state`),
+        const [tanks, tzaRes] = await Promise.all([
+          getParkStateData(),
           supabase.from('TZA_Directory').select('*').eq('Is_Monitoring', 1),
         ])
-        const tanks: any[] = tanksRes.ok ? await tanksRes.json() : []
         const tzas = tzaRes.data || []
 
         let rgs50L = 0, rgs50KG = 0, rgs100L = 0, rgs100KG = 0

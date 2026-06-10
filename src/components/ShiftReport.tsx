@@ -50,15 +50,15 @@ export default function ShiftReport({ currentWorkday, onBack }: ShiftReportProps
     fetchRecords();
   }, []);
 
-  // 🚀 НОВОЕ: Функция для агрегирования операций по ДАТЕ (независимо от Workday_ID)
   const getDateBasedReport = async (dateStrings: string[]): Promise<AggregatedDateReport[]> => {
     try {
+      const datesParam = dateStrings.join(',');
       const [tzaData, vsData, recData, autoRecData, transferData] = await Promise.all([
-        fetch('/api/fuel-dispensing-tza').then(r => r.json()),
-        fetch('/api/fuel-dispensing-vs').then(r => r.json()),
-        fetch('/api/fuel-reception').then(r => r.json()),
-        fetch('/api/fuel-reception-auto').then(r => r.json()),
-        fetch('/api/in-warehouse').then(r => r.json()),
+        fetch(`/api/fuel-dispensing-tza?dates=${datesParam}`).then(r => r.json()),
+        fetch(`/api/fuel-dispensing-vs?dates=${datesParam}`).then(r => r.json()),
+        fetch(`/api/fuel-reception?dates=${datesParam}`).then(r => r.json()),
+        fetch(`/api/fuel-reception-auto?dates=${datesParam}`).then(r => r.json()),
+        fetch(`/api/in-warehouse?dates=${datesParam}`).then(r => r.json()),
       ]);
 
       // Агрегируем все операции по датам

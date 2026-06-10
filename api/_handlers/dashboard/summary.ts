@@ -43,12 +43,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const [tanksDir, tanksData, receptions, autoReceptions, tzaDispense, vsDispense, measurements] = await Promise.all([
         supabase.from('Tanks_Directory').select('Name, Calibration, Status').eq('Category', 'tank'),
-        supabase.from('Daily_Measurements').select('Tank_Name, Average_Level, Mass, Volume').order('id', { ascending: false }),
-        supabase.from('Fuel_Reception').select('Date, Mass, Volume'),
-        supabase.from('Fuel_Reception_Auto').select('Date, Mass, Volume'),
-        supabase.from('Fuel_Dispensing_TZA').select('Date, Mass, Volume'),
-        supabase.from('Fuel_Dispensing_VS').select('Date, Mass, Volume'),
-        supabase.from('Daily_Measurements').select('Date, Density'),
+        supabase.from('Daily_Measurements').select('Tank_Name, Average_Level, Mass, Volume').order('id', { ascending: false }).limit(100),
+        supabase.from('Fuel_Reception').select('Date, Mass, Volume').gte('Timestamp', periodStartTs).lte('Timestamp', periodEndTs),
+        supabase.from('Fuel_Reception_Auto').select('Date, Mass, Volume').gte('Timestamp', periodStartTs).lte('Timestamp', periodEndTs),
+        supabase.from('Fuel_Dispensing_TZA').select('Date, Mass, Volume').gte('Timestamp', periodStartTs).lte('Timestamp', periodEndTs),
+        supabase.from('Fuel_Dispensing_VS').select('Date, Mass, Volume').gte('Timestamp', periodStartTs).lte('Timestamp', periodEndTs),
+        supabase.from('Daily_Measurements').select('Date, Density').or(`Timestamp.gte.${periodStartTs},Timestamp.is.null`),
       ])
 
       const totalTanks = (tanksDir.data || []).length

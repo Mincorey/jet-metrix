@@ -27,9 +27,13 @@ export const loadOpenWorkdaysFromDB = async (): Promise<WorkdayRecord[]> => {
     const now = new Date();
     const todayStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
 
-    // Только 'Open' смены СЕГОДНЯШНЕГО дня — старые зависшие записи игнорируются
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const yesterdayStr = `${String(yesterday.getDate()).padStart(2, '0')}.${String(yesterday.getMonth() + 1).padStart(2, '0')}.${yesterday.getFullYear()}`;
+
+    // Только 'Open' смены СЕГОДНЯШНЕГО или ВЧЕРАШНЕГО дня (для ночных смен) — старые зависшие записи игнорируются
     const openWorkdays = allWorkdays.filter(
-      w => w.Workday_Status === 'Open' && w.Date === todayStr
+      w => w.Workday_Status === 'Open' && (w.Date === todayStr || w.Date === yesterdayStr)
     );
 
     workdayData = openWorkdays;

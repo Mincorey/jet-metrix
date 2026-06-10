@@ -21,11 +21,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data, error } = await supabase
         .from('Trains')
         .insert({
-          Date: d.Date, Name: d.Name, Number: d.Number, Type: d.Type,
+          Workday_ID: d.Workday_ID, Date: d.Date, Name: d.Name, Number: d.Number, Type: d.Type,
           Level_1: d.Level_1, Level_2: d.Level_2, Level_3: d.Level_3,
           Average_Level: d.Average_Level, Density: d.Density,
           Temperature: d.Temperature, Volume: d.Volume, Mass: d.Mass,
-          Density_20: d.Density_20,
+          Density_20: d.Density_20, Timestamp: Date.now(),
         })
         .select().single()
       if (error) throw error

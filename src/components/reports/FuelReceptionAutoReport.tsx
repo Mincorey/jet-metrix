@@ -18,46 +18,34 @@ interface FuelReceptionAutoReportProps {
 export default function FuelReceptionAutoReport({ currentWorkday, onBack }: FuelReceptionAutoReportProps) {
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [reportData, setReportData] = useState<any[] | null>(null);
-  const [records, setRecords] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const fetchRecords = async () => {
-      try {
-        const res = await fetch('/api/fuel-reception-auto');
-        const data = res.ok ? await res.json() : [];
-        
-        // Sort descending by id
-        data.sort((a: any, b: any) => b.id - a.id);
-        
-        setRecords(data);
-      } catch (error) {
-        console.error("Ошибка при загрузке журнала приема из АЦ:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecords();
-  }, []);
-
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     if (selectedDates.length === 0) {
       alert('Выберите хотя бы одну дату');
       return;
     }
 
-    const selectedDateStrings = selectedDates.map(date => format(date, 'dd.MM.yyyy'));
-
-    const filteredRecords = records.filter(record => {
-      // Record Date might be "dd.MM.yyyy" or "dd.MM.yyyy HH:mm"
-      const recordDateOnly = record.Date ? record.Date.split(' ')[0] : '';
-      return selectedDateStrings.includes(recordDateOnly);
-    });
-
-    setReportData(filteredRecords);
+    setLoading(true);
+    try {
+      const selectedDateStrings = selectedDates.map(date => format(date, 'dd.MM.yyyy'));
+      const response = await fetch(`/api/fuel-reception-auto?dates=${selectedDateStrings.join(',')}`);
+      const data = await response.json();
+      
+      // Sort descending by id
+      if (Array.isArray(data)) {
+        data.sort((a: any, b: any) => b.id - a.id);
+      }
+      
+      setReportData(data);
+    } catch (error) {
+      console.error("Ошибка при загрузке журнала приема из АЦ:", error);
+      alert("Не удалось загрузить данные для отчета");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleShare = async () => {

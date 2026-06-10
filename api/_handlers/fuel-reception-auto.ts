@@ -7,7 +7,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     try {
-      const { data, error } = await supabase.from('Fuel_Reception_Auto').select('*').order('id', { ascending: false })
+      let query = supabase.from('Fuel_Reception_Auto').select('*')
+      const datesParam = req.query.dates as string
+      if (datesParam) {
+        const dates = datesParam.split(',').filter(Boolean)
+        if (dates.length > 0) {
+          const filterStr = dates.map(d => `Date.like.${d}%`).join(',')
+          query = query.or(filterStr)
+        }
+      }
+      const { data, error } = await query.order('id', { ascending: false })
       if (error) throw error
       return res.json(data)
     } catch (error) {
@@ -21,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data, error } = await supabase
         .from('Fuel_Reception_Auto')
         .insert({
-          Date: d.Date, Name: d.Name, Gos_Number: d.Gos_Number,
+          Workday_ID: d.Workday_ID, Date: d.Date, Name: d.Name, Gos_Number: d.Gos_Number,
           Tank_Name: d.Tank_Name, Counter_Before: d.Counter_Before,
           Counter_After: d.Counter_After, Density: d.Density,
           Temperature: d.Temperature, Volume: d.Volume, Mass: d.Mass,
