@@ -52,7 +52,9 @@ export default function FuelReceptionAutoReport({ currentWorkday, onBack }: Fuel
     const selectedDateStrings = selectedDates.map(date => format(date, 'dd.MM.yyyy'));
 
     const filteredRecords = records.filter(record => {
-      return selectedDateStrings.includes(record.Date);
+      // Record Date might be "dd.MM.yyyy" or "dd.MM.yyyy HH:mm"
+      const recordDateOnly = record.Date ? record.Date.split(' ')[0] : '';
+      return selectedDateStrings.includes(recordDateOnly);
     });
 
     setReportData(filteredRecords);

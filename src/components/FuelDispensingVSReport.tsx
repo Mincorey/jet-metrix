@@ -51,8 +51,9 @@ export default function FuelDispensingVSReport({ currentWorkday, onBack }: FuelD
 
     // Filter records from the server response
     const filteredRecords = records.filter(record => {
-      // Record Date is in "dd.MM.yyyy" format
-      return selectedDateStrings.includes(record.Date);
+      // Record Date might be "dd.MM.yyyy" or "dd.MM.yyyy HH:mm"
+      const recordDateOnly = record.Date ? record.Date.split(' ')[0] : '';
+      return selectedDateStrings.includes(recordDateOnly);
     });
 
     setReportData(filteredRecords);
