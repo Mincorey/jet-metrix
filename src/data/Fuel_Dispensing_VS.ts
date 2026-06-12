@@ -5,8 +5,8 @@ export interface FuelDispensingVSRecord {
   Name: string;
   TZA: string;
   Control_Number: string;
-  Counter_Before: number;
-  Counter_After: number;
+  Counter_Before?: number | null;
+  Counter_After?: number | null;
   Density: number;
   Volume: number;
   Mass: number;

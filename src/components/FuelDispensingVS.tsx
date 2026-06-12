@@ -43,8 +43,7 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
   const [passportNumber, setPassportNumber] = useState('');
   const [passportDate, setPassportDate] = useState('');
   const [densityStr, setDensityStr] = useState('');
-  const [counterBefore, setCounterBefore] = useState('');
-  const [counterAfter, setCounterAfter] = useState('');
+  const [volumeStr, setVolumeStr] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const [resultData, setResultData] = useState<any>(null);
@@ -55,35 +54,32 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
     setPassportNumber('');
     setPassportDate('');
     setDensityStr('');
-    setCounterBefore('');
-    setCounterAfter('');
+    setVolumeStr('');
     setResultData(null);
     setStep(2);
   };
 
   const handleCalculateAndSave = async () => {
-    if (!controlNumber.trim() || !passportNumber.trim() || !passportDate.trim() || !densityStr.trim() || !counterBefore.trim() || !counterAfter.trim()) {
+    if (!controlNumber.trim() || !passportNumber.trim() || !passportDate.trim() || !densityStr.trim() || !volumeStr.trim()) {
       showToast('Заполните все поля!', 'error');
       return;
     }
 
     const density = normalizeDensity(densityStr);
-    const before = parseFloat(counterBefore.replace(',', '.'));
-    const after = parseFloat(counterAfter.replace(',', '.'));
+    const volume = parseFloat(volumeStr.replace(',', '.'));
 
-    if (isNaN(density) || isNaN(before) || isNaN(after)) {
+    if (isNaN(density) || isNaN(volume)) {
       showToast('Введите корректные числовые значения', 'error');
       return;
     }
 
-    if (after < before) {
-      showToast('Показания счетчика ПОСЛЕ не могут быть меньше показаний ДО', 'error');
+    if (volume <= 0) {
+      showToast('Количество выданного топлива должно быть больше нуля', 'error');
       return;
     }
 
     setIsSaving(true);
     try {
-      const volume = parseFloat((after - before).toFixed(2));
       const mass = Math.round(volume * density);
 
       const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
@@ -96,8 +92,6 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
         Control_Number: controlNumber.trim(),
         Passport_Number: passportNumber.trim(),
         Passport_Date: passportDate.trim(),
-        Counter_Before: before,
-        Counter_After: after,
         Density: density,
         Volume: volume,
         Mass: mass
@@ -135,8 +129,6 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
       `ТЗА: ${resultData.TZA}\n` +
       `Контрольный талон: ${resultData.Control_Number}\n` +
       `Паспорт № ${resultData.Passport_Number} от ${resultData.Passport_Date}\n` +
-      `Счетчик ДО: ${resultData.Counter_Before} л.\n` +
-      `Счетчик ПОСЛЕ: ${resultData.Counter_After} л.\n` +
       `Плотность: ${resultData.Density} г/см³\n` +
       `Объем: ${resultData.Volume} л.\n` +
       `Масса: ${resultData.Mass} кг.\n` +
@@ -191,8 +183,7 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
     setPassportNumber('');
     setPassportDate('');
     setDensityStr('');
-    setCounterBefore('');
-    setCounterAfter('');
+    setVolumeStr('');
   };
 
   // Step 1: Select TZA
@@ -323,30 +314,14 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Счетчик ДО (л):
+                Количество выданного топлива (л):
               </label>
               <input
                 type="text"
                 inputMode="decimal"
-                value={counterBefore}
+                value={volumeStr}
                 onChange={(e) => {
-                  setCounterBefore(e.target.value.replace(/[^0-9.,]/g, ''));
-                }}
-                placeholder="0"
-                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white transition-all font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Счетчик ПОСЛЕ (л):
-              </label>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={counterAfter}
-                onChange={(e) => {
-                  setCounterAfter(e.target.value.replace(/[^0-9.,]/g, ''));
+                  setVolumeStr(e.target.value.replace(/[^0-9.,]/g, ''));
                 }}
                 placeholder="0"
                 className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white transition-all font-medium"
@@ -395,14 +370,6 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
                 <div className="flex justify-between items-center border-b border-white/10 pb-2">
                   <span className="text-slate-400 text-sm">Паспорт №:</span>
                   <span className="font-bold text-white tracking-wide text-right text-xs mt-1 leading-snug">№ {resultData.Passport_Number} <br />от {resultData.Passport_Date}</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                  <span className="text-slate-400 text-sm">Счетчик ДО:</span>
-                  <span className="font-mono font-medium text-white">{resultData.Counter_Before} л</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                  <span className="text-slate-400 text-sm">Счетчик ПОСЛЕ:</span>
-                  <span className="font-mono font-medium text-white">{resultData.Counter_After} л</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-white/10 pb-2">
                   <span className="text-slate-400 text-sm">Плотность:</span>

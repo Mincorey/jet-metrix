@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS "Trains" (
   "Temperature" DOUBLE PRECISION,
   "Volume" DOUBLE PRECISION,
   "Mass" DOUBLE PRECISION,
+  "Density_20" DOUBLE PRECISION,
   "Timestamp" BIGINT
 );
 

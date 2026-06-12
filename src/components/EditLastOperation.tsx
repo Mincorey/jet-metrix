@@ -54,13 +54,19 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
     let newMass = op.Mass;
     const parseF = (val: any) => parseFloat(String(val).replace(',', '.')) || 0;
 
-    if (['reception', 'reception_auto', 'dispense_tza', 'dispense_vs', 'in_warehouse'].includes(op.operationType)) {
+    if (['reception', 'reception_auto', 'dispense_tza', 'in_warehouse'].includes(op.operationType)) {
        const before = parseF(formData.Counter_Before);
        const after = parseF(formData.Counter_After);
        const dens = parseF(formData.Density);
        if (after < before) return showToast('Счетчик ПОСЛЕ меньше ДО', 'error');
        newVol = parseFloat((after - before).toFixed(2));
        newMass = parseFloat((newVol * dens).toFixed(2));
+    }
+
+    if (op.operationType === 'dispense_vs') {
+       newVol = parseF(formData.Volume);
+       const dens = parseF(formData.Density);
+       newMass = Math.round(newVol * dens);
     }
 
     if (['measurement', 'train'].includes(op.operationType)) {
@@ -143,14 +149,17 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
   const renderFields = () => {
      const type = op.operationType;
      const fields = [];
-     if (type === 'reception_auto') fields.push({ key: 'Gos_Number', label: 'Гос. номер АЦ' });
-     if (['dispense_tza', 'dispense_vs'].includes(type)) fields.push({ key: 'TZA', label: 'ТЗА' });
-     if (type === 'dispense_vs') fields.push({ key: 'Control_Number', label: 'Контрольный талон' });
-     if (type === 'train') fields.push({ key: 'Number', label: 'Номер вагона' });
-     if (['reception', 'reception_auto', 'dispense_tza', 'dispense_vs', 'in_warehouse'].includes(type)) {
-        fields.push({ key: 'Counter_Before', label: 'Счетчик ДО' });
-        fields.push({ key: 'Counter_After', label: 'Счетчик ПОСЛЕ' });
-     }
+      if (type === 'reception_auto') fields.push({ key: 'Gos_Number', label: 'Гос. номер АЦ' });
+      if (['dispense_tza', 'dispense_vs'].includes(type)) fields.push({ key: 'TZA', label: 'ТЗА' });
+      if (type === 'dispense_vs') {
+         fields.push({ key: 'Control_Number', label: 'Контрольный талон' });
+         fields.push({ key: 'Volume', label: 'Количество выданного топлива, л.' });
+      }
+      if (type === 'train') fields.push({ key: 'Number', label: 'Номер вагона' });
+      if (['reception', 'reception_auto', 'dispense_tza', 'in_warehouse'].includes(type)) {
+         fields.push({ key: 'Counter_Before', label: 'Счетчик ДО' });
+         fields.push({ key: 'Counter_After', label: 'Счетчик ПОСЛЕ' });
+      }
      if (['measurement', 'train'].includes(type)) {
         fields.push({ key: 'Level_1', label: 'Замер 1 (мм)' });
         fields.push({ key: 'Level_2', label: 'Замер 2 (мм)' });
