@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (error) throw error
 
       await sendTelegramNotification(
-        `🔄 <b>Внутрискладская перекачка</b>\nИз: ${From_Tank}\nВ: ${To_Tank}\nОбъем: ${Volume} л. (${Mass} кг)\nИсполнитель: ${Name}`
+        `🔄 <b>Внутрискладская перекачка</b>\nИз: ${From_Tank}\nВ: ${To_Tank}\nОбъем: ${Math.round(Volume || 0)} л. (${Math.round(Mass || 0)} кг)\nИсполнитель: ${Name}`
       )
       return res.json({ success: true, id: data.id })
     } catch (error) {

@@ -39,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (error) throw error
 
       await sendTelegramNotification(
-        `📥 <b>Прием топлива</b>\nРезервуар: ${d.Tank_Name}\nОбъем: ${d.Volume} л. (${d.Mass} кг)\nПлотность: ${d.Density} г/см. куб.\nИсполнитель: ${d.Name}`
+        `📥 <b>Прием топлива</b>\nРезервуар: ${d.Tank_Name}\nОбъем: ${Math.round(d.Volume || 0)} л. (${Math.round(d.Mass || 0)} кг)\nПлотность: ${d.Density} г/см. куб.\nИсполнитель: ${d.Name}`
       )
       return res.json({ id: data.id, message: 'Прием топлива успешно сохранен!' })
     } catch (error) {

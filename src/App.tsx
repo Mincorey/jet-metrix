@@ -540,7 +540,7 @@ const handleSendChecklist = async () => {
               onClick={() => setShowEditModal(true)}
               className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-lg font-bold py-4 px-6 rounded-xl transition-all shadow-sm active:scale-95 border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center gap-2"
             >
-              Последняя операция
+              Корректировка операций
             </button>
             <button
               onClick={handleCloseShift}

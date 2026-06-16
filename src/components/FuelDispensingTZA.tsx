@@ -138,6 +138,11 @@ export default function FuelDispensingTZA({ currentWorkday, onBack }: FuelDispen
     try {
       const volume = parseFloat((after - before).toFixed(2));
 
+      if (volume > 25000) {
+        showToast('Объем выдачи не может превышать 25 000 л. Проверьте показания счетчиков!', 'error');
+        return;
+      }
+
       const parsedDensity = normalizeDensity(density);
       if (isNaN(parsedDensity) || parsedDensity <= 0) {
         showToast('Некорректная плотность.', 'error');

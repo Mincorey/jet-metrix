@@ -45,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (error) throw error
 
       await sendTelegramNotification(
-        `📊 <b>Смена закрыта</b>\nДата: ${workday?.Date}\nСотрудник: ${workday?.Name}\n\n📈 <b>Итоги смены:</b>\nПринято: ${Number(totalRecVol.toFixed(2))} л. / ${Number(totalRecMass.toFixed(2))} кг.\nВыдано в ТЗА: ${Number(tza.vol.toFixed(2))} л. / ${Number(tza.mass.toFixed(2))} кг.\nВыдано в ВС: ${Number(vs.vol.toFixed(2))} л. / ${Number(vs.mass.toFixed(2))} кг.`
+        `📊 <b>Смена закрыта</b>\nДата: ${workday?.Date}\nСотрудник: ${workday?.Name}\n\n📈 <b>Итоги смены:</b>\nПринято: ${Math.round(totalRecVol)} л. / ${Math.round(totalRecMass)} кг.\nВыдано в ТЗА: ${Math.round(tza.vol)} л. / ${Math.round(tza.mass)} кг.\nВыдано в ВС: ${Math.round(vs.vol)} л. / ${Math.round(vs.mass)} кг.`
       )
 
       console.log(`🔒 Смена #${id} закрыта.`)

@@ -105,6 +105,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const msg = `🚨 <b>ВНИМАНИЕ: УДАЛЕНИЕ ОПЕРАЦИИ!</b>\n🗑 <b>${opName}</b>\n\n👤 <b>Исполнитель (Смена):</b> ${employeeName}\n🕒 <b>Время удаления:</b> ${opDate}\n\n❌ <b>УДАЛЕННЫЕ ДАННЫЕ:</b>\n${deletedDataStr}`;
         await sendTelegramNotification(msg);
 
+        await recalculateWorkdayTotals(oldRecord.Workday_ID);
+
         return res.json({ success: true, message: 'Операция успешно удалена' })
       } else {
         const { error } = await supabase.from(table).update(data).eq('id', id)
@@ -135,6 +137,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           await sendTelegramNotification(msg);
         }
 
+        await recalculateWorkdayTotals(oldRecord.Workday_ID);
+
         return res.json({ success: true, message: 'Операция успешно обновлена' })
       }
     } catch (error) {
@@ -144,6 +148,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   return sendError(res, 405, 'Method not allowed')
+}
+
+async function recalculateWorkdayTotals(workdayId: number) {
+  if (!workdayId) return;
+
+  const [recRows, recAutoRows, transferRows, tzaRows, vsRows] = await Promise.all([
+    supabase.from('Fuel_Reception').select('Volume, Mass').eq('Workday_ID', workdayId),
+    supabase.from('Fuel_Reception_Auto').select('Volume, Mass').eq('Workday_ID', workdayId),
+    supabase.from('In_warehouse').select('Volume, Mass').eq('Workday_ID', workdayId),
+    supabase.from('Fuel_Dispensing_TZA').select('Volume, Mass').eq('Workday_ID', workdayId),
+    supabase.from('Fuel_Dispensing_VS').select('Volume, Mass').eq('Workday_ID', workdayId),
+  ]);
+
+  const sum = (rows: any[] | null, field: string) => (rows || []).reduce((acc, r) => acc + (r[field] || 0), 0);
+
+  const totalRecVol = sum(recRows.data, 'Volume') + sum(recAutoRows.data, 'Volume') + sum(transferRows.data, 'Volume');
+  const totalRecMass = sum(recRows.data, 'Mass') + sum(recAutoRows.data, 'Mass') + sum(transferRows.data, 'Mass');
+  const tzaVol = sum(tzaRows.data, 'Volume');
+  const tzaMass = sum(tzaRows.data, 'Mass');
+  const vsVol = sum(vsRows.data, 'Volume');
+  const vsMass = sum(vsRows.data, 'Mass');
+
+  await supabase.from('Workdays').update({
+    Fuel_Received_L: totalRecVol,
+    Fuel_Received_KG: totalRecMass,
+    Fuel_Issued_TZA_L: tzaVol,
+    Fuel_Issued_TZA_KG: tzaMass,
+    Fuel_Issued_VS_L: vsVol,
+    Fuel_Issued_VS_KG: vsMass,
+  }).eq('id', workdayId);
 }
 
 

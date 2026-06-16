@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       await sendTelegramNotification(
-        `✈️ <b>Выдача в ВС</b>\nТЗА: ${d.TZA}\nКонтрольный талон: №${d.Control_Number}\nОбъем: ${d.Volume} л. (${d.Mass} кг)\nПлотность из КТ: ${d.Density} г/см. куб.\nИсполнитель: ${d.Name}`
+        `✈️ <b>Выдача в ВС</b>\nТЗА: ${d.TZA}\nКонтрольный талон: №${d.Control_Number}\nОбъем: ${Math.round(d.Volume || 0)} л. (${Math.round(d.Mass || 0)} кг)\nПлотность из КТ: ${d.Density} г/см. куб.\nИсполнитель: ${d.Name}`
       )
       return res.json({ id: data.id, message: 'Заправка ВС успешно сохранена!' })
     } catch (error) {

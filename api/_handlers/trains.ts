@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (error) throw error
 
       await sendTelegramNotification(
-        `🚂 <b>Замер ЖД-цистерны</b>\nНомер вагона: ${d.Number}\nТип вагона: ${d.Type}\nУровень: ${d.Average_Level} мм\nОбъем: ${d.Volume} л. (${d.Mass} кг)\nПлотность: ${d.Density} г/см. куб.\nТемпература: ${d.Temperature != null ? d.Temperature + ' °C' : 'н/д'}\nПлотность при 20°: ${d.Density_20 != null ? d.Density_20 + ' кг/м³' : 'н/д'}\nИсполнитель: ${d.Name}`
+        `🚂 <b>Замер ЖД-цистерны</b>\nНомер вагона: ${d.Number}\nТип вагона: ${d.Type}\nУровень: ${d.Average_Level} мм\nОбъем: ${Math.round(d.Volume || 0)} л. (${Math.round(d.Mass || 0)} кг)\nПлотность: ${d.Density} г/см. куб.\nТемпература: ${d.Temperature != null ? d.Temperature + ' °C' : 'н/д'}\nПлотность при 20°: ${d.Density_20 != null ? d.Density_20 + ' кг/м³' : 'н/д'}\nИсполнитель: ${d.Name}`
       )
       return res.json({ id: data.id, message: 'Вагон успешно сохранен!' })
     } catch (error) {

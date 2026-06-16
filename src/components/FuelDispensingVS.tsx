@@ -78,6 +78,11 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
       return;
     }
 
+    if (volume > 25000) {
+      showToast('Количество выданного топлива не может превышать 25 000 л.', 'error');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const mass = Math.round(volume * density);
