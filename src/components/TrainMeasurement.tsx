@@ -132,6 +132,7 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
 
     setIsSaving(true);
     try {
+      let savedSuccessfully = false;
       if (navigator.onLine) {
         const response = await fetch('/api/trains', {
           method: 'POST',
@@ -143,10 +144,13 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
 
         if (response.ok) {
           setResultData(payload);
+          savedSuccessfully = true;
         } else {
           showToast('Ошибка при сохранении на сервере.', 'error');
         }
-      } else {
+      }
+
+      if (!savedSuccessfully && !navigator.onLine) {
         const tempId = Date.now();
         await saveToQueue('/api/trains', payload);
         setResultData({ ...payload, id: tempId });
@@ -154,7 +158,10 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
       }
     } catch (error) {
       console.error('Error saving train data:', error);
-      showToast('Ошибка при соединении с сервером.', 'error');
+      const tempId = Date.now();
+      await saveToQueue('/api/trains', payload);
+      setResultData({ ...payload, id: tempId });
+      showToast('Сбой сети. Данные сохранены локально на устройстве.', 'warning');
     } finally {
       setIsSaving(false);
     }

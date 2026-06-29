@@ -13,6 +13,6 @@
   "rewrites": [
     { "source": "/api/test", "destination": "/api/test" },
     { "source": "/api/(.+)", "destination": "/api/[...path]" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|node_modules/|src/|@vite/|@react-refresh|manifest\\.json|logo\\.png|icon\\.png).*)", "destination": "/index.html" }
   ]
 }

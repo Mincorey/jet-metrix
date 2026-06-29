@@ -104,15 +104,21 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
 
       let result = false;
       let tempId: number | null = null;
+      let savedSuccessfully = false;
 
       if (navigator.onLine) {
         const dbResult = await addFuelDispensingVSDB(recordPayload);
-        if (dbResult) result = true;
-      } else {
+        if (dbResult) {
+          result = true;
+          savedSuccessfully = true;
+        }
+      }
+
+      if (!savedSuccessfully) {
         tempId = Date.now();
         await saveToQueue('/api/fuel-dispensing-vs', recordPayload);
         result = true;
-        showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
+        showToast('Сеть недоступна или запрос не удался. Данные сохранены локально и будут отправлены позже.', 'warning');
       }
 
       if (result) {

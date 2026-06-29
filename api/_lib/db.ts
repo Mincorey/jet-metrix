@@ -1,4 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
+import WebSocket from 'ws'
+
+if (typeof global !== 'undefined' && !global.WebSocket) {
+  (global as any).WebSocket = WebSocket
+}
 
 // supabase-js expects the bare project URL (https://<ref>.supabase.co).
 // Defensively strip a trailing slash and any '/rest/v1' segment some users

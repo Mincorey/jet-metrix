@@ -117,6 +117,7 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
 
     setIsSaving(true);
     try {
+      let savedSuccessfully = false;
       if (navigator.onLine) {
         const res = await fetch('/api/in-warehouse', {
           method: 'POST',
@@ -127,10 +128,13 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
           const data = await res.json();
           setResultData({ ...payload, id: data.id });
           setStep(4);
+          savedSuccessfully = true;
         } else {
-          throw new Error('Server error');
+          showToast('Ошибка при сохранении на сервере.', 'error');
         }
-      } else {
+      }
+
+      if (!savedSuccessfully && !navigator.onLine) {
         await saveToQueue('/api/in-warehouse', payload);
         setResultData({ ...payload, id: Date.now() });
         setStep(4);
@@ -138,7 +142,10 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
       }
     } catch (error) {
       console.error("Save error:", error);
-      showToast('Ошибка при сохранении!', 'error');
+      await saveToQueue('/api/in-warehouse', payload);
+      setResultData({ ...payload, id: Date.now() });
+      setStep(4);
+      showToast('Сбой сети. Сохранено локально (офлайн)', 'warning');
     } finally {
       setIsSaving(false);
     }

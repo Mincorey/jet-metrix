@@ -137,14 +137,20 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
 
       let result = false;
       let tempId: number | null = null;
+      let savedSuccessfully = false;
 
       if (navigator.onLine) {
         const dbResult = await addDailyMeasurementDB(measurement);
-        if (dbResult) result = true;
-      } else {
+        if (dbResult) {
+          result = true;
+          savedSuccessfully = true;
+        }
+      }
+
+      if (!savedSuccessfully) {
         tempId = Date.now();
         await saveToQueue('/api/daily-measurements', measurement);
-        showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
+        showToast('Сеть недоступна или запрос не удался. Данные сохранены локально и будут отправлены позже.', 'warning');
         result = true;
       }
 

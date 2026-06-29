@@ -185,6 +185,7 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
 
   const handleSaveInventoryAct = async () => {
     setIsSaving(true);
+    let payload: any = null;
     try {
       // Считаем суммы ТОЛЬКО по самим 13 резервуарам
       const tanksTotalVolume = inventoryTable.reduce((sum, r) => sum + (Number(r.Volume) || 0), 0);
@@ -197,7 +198,7 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
       const finalTotalVolume = tanksTotalVolume + DYNAMIC_TOTAL_CONSTANTS;
       const finalTotalMass = tanksTotalMass + (DYNAMIC_TOTAL_CONSTANTS * averageDensity);
 
-      const payload = {
+      payload = {
         Date: currentWorkday?.Date || new Date().toLocaleDateString('ru-RU'),
         Name: currentWorkday?.Name || 'Старший авиатехник',
         Total_Volume: finalTotalVolume,
@@ -205,6 +206,7 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
         Details: inventoryTable
       };
 
+      let savedSuccessfully = false;
       if (navigator.onLine) {
         const response = await fetch('/api/inventory', {
           method: 'POST',
@@ -214,20 +216,30 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
           body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-          throw new Error('Сервер ответил ошибкой: ' + response.status);
+        if (response.ok) {
+          showToast('Инвентаризация успешно сохранена!', 'success');
+          savedSuccessfully = true;
+        } else {
+          showToast('Ошибка при сохранении на сервере.', 'error');
         }
-        showToast('Инвентаризация успешно сохранена!', 'success');
-      } else {
-        await saveToQueue('/api/inventory', payload);
-        showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
       }
 
-      inventoryTable.length = 0; // Очищаем локальные данные после успешного сохранения
-      onBack();
+      if (!savedSuccessfully && !navigator.onLine) {
+        await saveToQueue('/api/inventory', payload);
+        showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
+        savedSuccessfully = true;
+      }
+
+      if (savedSuccessfully) {
+        inventoryTable.length = 0; // Очищаем локальные данные после успешного сохранения
+        onBack();
+      }
     } catch (error) {
       console.error(error);
-      showToast('Ошибка при обращении к серверу', 'error');
+      await saveToQueue('/api/inventory', payload);
+      showToast('Сбой сети. Данные сохранены локально на устройстве.', 'warning');
+      inventoryTable.length = 0; // Очищаем локальные данные после успешного сохранения
+      onBack();
     } finally {
       setIsSaving(false);
     }

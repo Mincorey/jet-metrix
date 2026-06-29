@@ -137,6 +137,7 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
 
       let result = false;
       let tempId: number | null = null;
+      let savedSuccessfully = false;
 
       if (navigator.onLine) {
           try {
@@ -149,15 +150,18 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
                   const data = await resp.json();
                   tempId = data.id;
                   result = true;
+                  savedSuccessfully = true;
               }
           } catch (e) {
               console.error(e);
           }
-      } else {
+      }
+
+      if (!savedSuccessfully) {
         tempId = Date.now();
         await saveToQueue('/api/fuel-reception-auto', recordPayload);
         result = true;
-        showToast('Сеть недоступна. Данные сохранены локально и будут отправлены позже.', 'warning');
+        showToast('Сеть недоступна или запрос не удался. Данные сохранены локально и будут отправлены позже.', 'warning');
       }
 
       if (result) {
