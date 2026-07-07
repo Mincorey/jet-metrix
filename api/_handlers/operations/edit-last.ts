@@ -87,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const opName = OPERATION_NAMES[operationType] || 'Неизвестная операция';
       const employeeName = oldRecord.Name || 'Неизвестно';
-      const opDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+      const opDate = new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
 
       if (action === 'delete') {
         const { error } = await supabase.from(table).delete().eq('id', id)

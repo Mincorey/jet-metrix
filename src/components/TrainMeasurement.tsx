@@ -78,32 +78,39 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
     let volume = 0;
     const targetTrain = activeTrains.find(t => t.Name === trainType);
     if (targetTrain && targetTrain.Calibration) {
-      const lowerLevel = Math.floor(avgLevel / 10) * 10;
-      const upperLevel = lowerLevel + 10;
-
       const getVol = (rec: any) => {
         const v = rec.volume ?? rec.Volume;
         return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
       };
 
-      const lowerRecord = targetTrain.Calibration.find((r: any) => Number(r.level ?? r.Level) === lowerLevel);
-      const upperRecord = targetTrain.Calibration.find((r: any) => Number(r.level ?? r.Level) === upperLevel);
+      const getLevel = (rec: any) => Number((rec.level ?? rec.Level) || 0);
+
+      const maxLevel = Math.max(...targetTrain.Calibration.map(getLevel));
+      const scaleFactor = maxLevel < 1000 ? 10 : 1;
+      const targetLevel = avgLevel / scaleFactor;
+
+      const exactRecord = targetTrain.Calibration.find((r: any) => getLevel(r) === targetLevel);
 
       let calculatedVolume = 0;
 
-      if (lowerRecord && upperRecord) {
-        if (avgLevel === lowerLevel) {
-          calculatedVolume = getVol(lowerRecord);
-        } else {
-          const fraction = (avgLevel - lowerLevel) / 10;
+      if (exactRecord) {
+        calculatedVolume = getVol(exactRecord);
+      } else {
+        const sorted = [...targetTrain.Calibration].sort((a, b) => getLevel(a) - getLevel(b));
+        const lowerRecord = sorted.filter((r: any) => getLevel(r) < targetLevel).pop();
+        const upperRecord = sorted.filter((r: any) => getLevel(r) > targetLevel).shift();
+
+        if (lowerRecord && upperRecord) {
+          const lL = getLevel(lowerRecord);
+          const uL = getLevel(upperRecord);
           const volLower = getVol(lowerRecord);
           const volUpper = getVol(upperRecord);
-          calculatedVolume = volLower + (volUpper - volLower) * fraction;
+          calculatedVolume = volLower + (volUpper - volLower) * ((targetLevel - lL) / (uL - lL));
+        } else if (lowerRecord) {
+          calculatedVolume = getVol(lowerRecord);
+        } else if (upperRecord) {
+          calculatedVolume = getVol(upperRecord);
         }
-      } else if (lowerRecord) {
-        calculatedVolume = getVol(lowerRecord);
-      } else if (upperRecord) {
-        calculatedVolume = getVol(upperRecord);
       }
 
       volume = Math.round(calculatedVolume);

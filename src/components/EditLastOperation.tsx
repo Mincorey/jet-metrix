@@ -162,21 +162,35 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
        const targetTank = tanks.find(t => t.Name === (selectedOp.operationType === 'train' ? formData.Type : formData.Tank_Name));
        
        if (targetTank && targetTank.Calibration) {
-          const exact = targetTank.Calibration.find((r:any) => Number(r.level || r.Level) === avg);
-          if (exact) {
-             newVol = Number(String(exact.volume || exact.Volume).replace(',','.'));
-          } else {
-             const sorted = [...targetTank.Calibration].sort((a,b)=> Number(a.level||a.Level) - Number(b.level||b.Level));
-             const lower = sorted.filter((r:any) => Number(r.level||r.Level) < avg).pop();
-             const upper = sorted.filter((r:any) => Number(r.level||r.Level) > avg).shift();
-             if (lower && upper) {
-                const lL = Number(lower.level||lower.Level), uL = Number(upper.level||upper.Level);
-                const lV = Number(String(lower.volume||lower.Volume).replace(',','.')), uV = Number(String(upper.volume||upper.Volume).replace(',','.'));
-                newVol = lV + (uV - lV) * ((avg - lL) / (uL - lL));
-             }
-          }
-          newVol = parseFloat(newVol.toFixed(2));
-       }
+           const getLevel = (rec: any) => Number((rec.level ?? rec.Level) || 0);
+           const getVol = (rec: any) => {
+             const v = rec.volume ?? rec.Volume;
+             return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
+           };
+
+           const maxLevel = Math.max(...targetTank.Calibration.map(getLevel));
+           const scaleFactor = maxLevel < 1000 ? 10 : 1;
+           const targetLevel = avg / scaleFactor;
+
+           const exact = targetTank.Calibration.find((r: any) => getLevel(r) === targetLevel);
+           if (exact) {
+              newVol = getVol(exact);
+           } else {
+              const sorted = [...targetTank.Calibration].sort((a, b) => getLevel(a) - getLevel(b));
+              const lower = sorted.filter((r: any) => getLevel(r) < targetLevel).pop();
+              const upper = sorted.filter((r: any) => getLevel(r) > targetLevel).shift();
+              if (lower && upper) {
+                 const lL = getLevel(lower), uL = getLevel(upper);
+                 const lV = getVol(lower), uV = getVol(upper);
+                 newVol = lV + (uV - lV) * ((targetLevel - lL) / (uL - lL));
+              } else if (lower) {
+                 newVol = getVol(lower);
+              } else if (upper) {
+                 newVol = getVol(upper);
+              }
+           }
+           newVol = parseFloat(newVol.toFixed(2));
+        }
        newMass = parseFloat((newVol * dens).toFixed(2));
        formData.Average_Level = avg;
     }

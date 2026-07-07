@@ -82,34 +82,39 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
     }
 
     const parsedCalibration = selectedTankData.Calibration;
-    const targetLevel = avgLevel;
+    const getLevel = (rec: any) => Number((rec.level ?? rec.Level) || 0);
+    const getVol = (rec: any) => {
+      const v = rec.volume ?? rec.Volume;
+      return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
+    };
+
+    const maxLevel = Math.max(...parsedCalibration.map(getLevel));
+    const scaleFactor = maxLevel < 1000 ? 10 : 1;
+    const targetLevel = avgLevel / scaleFactor;
 
     let calculatedVolume = 0;
-    // Строгое приведение типов для поиска
-    const exactMatch = parsedCalibration.find((r: any) => Number(r.level || r.Level) === targetLevel);
+    const exactMatch = parsedCalibration.find((r: any) => getLevel(r) === targetLevel);
 
     if (exactMatch) {
-      const volStr = String(exactMatch.volume || exactMatch.Volume).replace(',', '.');
-      calculatedVolume = Number(volStr);
+      calculatedVolume = getVol(exactMatch);
     } else {
-      // Умная интерполяция, если точного миллиметра нет
-      const sorted = [...parsedCalibration].sort((a, b) => Number(a.level || a.Level) - Number(b.level || b.Level));
-      const lower = sorted.filter((r: any) => Number(r.level || r.Level) < targetLevel).pop();
-      const upper = sorted.filter((r: any) => Number(r.level || r.Level) > targetLevel).shift();
+      const sorted = [...parsedCalibration].sort((a, b) => getLevel(a) - getLevel(b));
+      const lower = sorted.filter((r: any) => getLevel(r) < targetLevel).pop();
+      const upper = sorted.filter((r: any) => getLevel(r) > targetLevel).shift();
 
       if (lower && upper) {
-        const lowerLevel = Number(lower.level || lower.Level);
-        const upperLevel = Number(upper.level || upper.Level);
-        const lowerVol = Number(String(lower.volume || lower.Volume).replace(',', '.'));
-        const upperVol = Number(String(upper.volume || upper.Volume).replace(',', '.'));
-
-        const levelDiff = upperLevel - lowerLevel;
-        const volDiff = upperVol - lowerVol;
-        const fraction = (targetLevel - lowerLevel) / levelDiff;
-        calculatedVolume = lowerVol + (volDiff * fraction);
+        const lL = getLevel(lower);
+        const uL = getLevel(upper);
+        const lV = getVol(lower);
+        const uV = getVol(upper);
+        calculatedVolume = lV + (uV - lV) * ((targetLevel - lL) / (uL - lL));
+      } else if (lower) {
+        calculatedVolume = getVol(lower);
+      } else if (upper) {
+        calculatedVolume = getVol(upper);
       } else {
-        showToast(`Объем для уровня ${targetLevel} мм не найден в таблице!`, "error");
-        return; // Прерываем выполнение
+        showToast(`Объем для уровня ${avgLevel} мм не найден в таблице!`, "error");
+        return;
       }
     }
 

@@ -130,33 +130,38 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
     }
 
     const parsedCalibration = targetTank.Calibration;
-    const targetLevel = avgLevel;
+    const getLevel = (rec: any) => Number((rec.Level ?? rec.level) || 0);
+    const getVol = (rec: any) => {
+      const v = rec.Volume ?? rec.volume;
+      return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
+    };
+
+    const maxLevel = Math.max(...parsedCalibration.map(getLevel));
+    const scaleFactor = maxLevel < 1000 ? 10 : 1;
+    const targetLevel = avgLevel / scaleFactor;
 
     let calculatedVolume = 0;
-    // Строгое приведение типов для поиска
-    const exactMatch = parsedCalibration.find((r: any) => Number(r.Level || r.level) === targetLevel);
+    const exactMatch = parsedCalibration.find((r: any) => getLevel(r) === targetLevel);
 
     if (exactMatch) {
-      const volStr = String(exactMatch.Volume || exactMatch.volume).replace(',', '.');
-      calculatedVolume = Number(volStr);
+      calculatedVolume = getVol(exactMatch);
     } else {
-      // Умная интерполяция, если точного миллиметра нет
-      const sorted = [...parsedCalibration].sort((a, b) => Number(a.Level || a.level) - Number(b.Level || b.level));
-      const lower = sorted.filter((r: any) => Number(r.Level || r.level) < targetLevel).pop();
-      const upper = sorted.filter((r: any) => Number(r.Level || r.level) > targetLevel).shift();
+      const sorted = [...parsedCalibration].sort((a, b) => getLevel(a) - getLevel(b));
+      const lower = sorted.filter((r: any) => getLevel(r) < targetLevel).pop();
+      const upper = sorted.filter((r: any) => getLevel(r) > targetLevel).shift();
 
       if (lower && upper) {
-        const lowerLevel = Number(lower.Level || lower.level);
-        const upperLevel = Number(upper.Level || upper.level);
-        const lowerVol = Number(String(lower.Volume || lower.volume).replace(',', '.'));
-        const upperVol = Number(String(upper.Volume || upper.volume).replace(',', '.'));
-
-        const levelDiff = upperLevel - lowerLevel;
-        const volDiff = upperVol - lowerVol;
-        const fraction = (targetLevel - lowerLevel) / levelDiff;
-        calculatedVolume = lowerVol + (volDiff * fraction);
+        const lL = getLevel(lower);
+        const uL = getLevel(upper);
+        const lV = getVol(lower);
+        const uV = getVol(upper);
+        calculatedVolume = lV + (uV - lV) * ((targetLevel - lL) / (uL - lL));
+      } else if (lower) {
+        calculatedVolume = getVol(lower);
+      } else if (upper) {
+        calculatedVolume = getVol(upper);
       } else {
-        showToast(`Объем для уровня ${targetLevel} мм не найден в таблице!`, "error");
+        showToast(`Объем для уровня ${avgLevel} мм не найден в таблице!`, "error");
         return; // Прерываем выполнение
       }
     }
@@ -263,30 +268,36 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
       const targetTank = activeTanks.find(t => t.Name === selectedTank);
       if (targetTank && targetTank.Calibration) {
         const parsedCalibration = targetTank.Calibration;
-        const targetLevel = avgLevel;
+        const getLevel = (rec: any) => Number((rec.Level ?? rec.level) || 0);
+        const getVol = (rec: any) => {
+          const v = rec.Volume ?? rec.volume;
+          return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
+        };
+
+        const maxLevel = Math.max(...parsedCalibration.map(getLevel));
+        const scaleFactor = maxLevel < 1000 ? 10 : 1;
+        const targetLevel = avgLevel / scaleFactor;
 
         let calculatedVolume = 0;
-        const exactMatch = parsedCalibration.find((r: any) => Number(r.Level || r.level) === targetLevel);
+        const exactMatch = parsedCalibration.find((r: any) => getLevel(r) === targetLevel);
 
         if (exactMatch) {
-          const volStr = String(exactMatch.Volume || exactMatch.volume).replace(',', '.');
-          calculatedVolume = Number(volStr);
+          calculatedVolume = getVol(exactMatch);
         } else {
-          // Умная интерполяция, если точного миллиметра нет
-          const sorted = [...parsedCalibration].sort((a, b) => Number(a.Level || a.level) - Number(b.Level || b.level));
-          const lower = sorted.filter((r: any) => Number(r.Level || r.level) < targetLevel).pop();
-          const upper = sorted.filter((r: any) => Number(r.Level || r.level) > targetLevel).shift();
+          const sorted = [...parsedCalibration].sort((a, b) => getLevel(a) - getLevel(b));
+          const lower = sorted.filter((r: any) => getLevel(r) < targetLevel).pop();
+          const upper = sorted.filter((r: any) => getLevel(r) > targetLevel).shift();
 
           if (lower && upper) {
-            const lowerLevel = Number(lower.Level || lower.level);
-            const upperLevel = Number(upper.Level || upper.level);
-            const lowerVol = Number(String(lower.Volume || lower.volume).replace(',', '.'));
-            const upperVol = Number(String(upper.Volume || upper.volume).replace(',', '.'));
-
-            const levelDiff = upperLevel - lowerLevel;
-            const volDiff = upperVol - lowerVol;
-            const fraction = (targetLevel - lowerLevel) / levelDiff;
-            calculatedVolume = lowerVol + (volDiff * fraction);
+            const lL = getLevel(lower);
+            const uL = getLevel(upper);
+            const lV = getVol(lower);
+            const uV = getVol(upper);
+            calculatedVolume = lV + (uV - lV) * ((targetLevel - lL) / (uL - lL));
+          } else if (lower) {
+            calculatedVolume = getVol(lower);
+          } else if (upper) {
+            calculatedVolume = getVol(upper);
           }
         }
 
