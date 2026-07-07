@@ -204,6 +204,7 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
       const finalTotalMass = tanksTotalMass + (DYNAMIC_TOTAL_CONSTANTS * averageDensity);
 
       payload = {
+        Workday_ID: currentWorkday?.id || null,
         Date: currentWorkday?.Date || new Date().toLocaleDateString('ru-RU'),
         Name: currentWorkday?.Name || 'Старший авиатехник',
         Total_Volume: finalTotalVolume,

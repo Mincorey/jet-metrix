@@ -60,6 +60,8 @@ export default function App() {
   const [sendingChecklist, setSendingChecklist] = useState(false);
   const [isClosingShift, setIsClosingShift] = useState(false);
   const [shiftsLoaded, setShiftsLoaded] = useState(false);
+  const [unlockPin, setUnlockPin] = useState('');
+  const [isShiftUnlocked, setIsShiftUnlocked] = useState(true);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -218,6 +220,49 @@ export default function App() {
     fetchTexts();
   }, [refreshKey]); // Чтобы при добавлении/удалении список обновлялся, хотя с заглушками пока не будет
 
+  useEffect(() => {
+    if (!currentWorkday) {
+      setIsShiftUnlocked(true);
+      return;
+    }
+    
+    const lastActive = localStorage.getItem('sgsm_last_active_time');
+    if (!lastActive) {
+      localStorage.setItem('sgsm_last_active_time', Date.now().toString());
+    }
+
+    const updateActivity = () => {
+      localStorage.setItem('sgsm_last_active_time', Date.now().toString());
+    };
+    
+    window.addEventListener('click', updateActivity);
+    window.addEventListener('keydown', updateActivity);
+    window.addEventListener('touchstart', updateActivity);
+    
+    return () => {
+      window.removeEventListener('click', updateActivity);
+      window.removeEventListener('keydown', updateActivity);
+      window.removeEventListener('touchstart', updateActivity);
+    };
+  }, [currentWorkday]);
+
+  useEffect(() => {
+    if (!currentWorkday) {
+      setIsShiftUnlocked(true);
+      return;
+    }
+
+    const checkTimeout = () => {
+      const lastActive = Number(localStorage.getItem('sgsm_last_active_time') || 0);
+      if (lastActive > 0 && Date.now() - lastActive > 30 * 60 * 1000) {
+        setIsShiftUnlocked(false);
+      }
+    };
+
+    checkTimeout();
+    const interval = setInterval(checkTimeout, 10000); // проверяем каждые 10 секунд
+    return () => clearInterval(interval);
+  }, [currentWorkday]);
 
   // Dark Mode State
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -393,6 +438,29 @@ const handleSendChecklist = async () => {
     }
 
     setSelectedUserForAuth(null);
+  };
+
+  const handleUnlockShiftSubmit = () => {
+    if (!currentWorkday) {
+      setIsShiftUnlocked(true);
+      return;
+    }
+    const currentEmp = employees.find(e => e.Name === currentWorkday.Name);
+    if (!currentEmp) {
+      showToast('Сотрудник смены не найден!', 'error');
+      return;
+    }
+    
+    if (unlockPin !== currentEmp.Password && currentEmp.Password !== '') {
+      showToast('Неверный PIN-код!', 'error');
+      setUnlockPin('');
+      return;
+    }
+
+    setIsShiftUnlocked(true);
+    setUnlockPin('');
+    localStorage.setItem('sgsm_last_active_time', Date.now().toString());
+    showToast('Смена успешно разблокирована!', 'success');
   };
 
   const openAuth = (user: Employee) => {
@@ -1046,6 +1114,42 @@ const handleSendChecklist = async () => {
 
       {/* Hidden button for parameter-less auth */}
       <button id="hidden-auth-btn" onClick={handleAuthSubmit} className="hidden" />
+
+      {/* Shift Lock Modal */}
+      {!isShiftUnlocked && currentWorkday && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 overflow-y-auto flex items-center justify-center">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-xs shadow-2xl text-center">
+            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Смена заблокирована</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+              Время бездействия превысило 30 минут.<br />
+              Смена: <span className="font-semibold text-slate-700 dark:text-slate-200">{currentWorkday.Name}</span>
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">
+              Введите PIN-код для разблокировки
+            </p>
+
+            <input
+              type="password"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={unlockPin}
+              onChange={(e) => setUnlockPin(e.target.value.replace(/\D/g, ''))}
+              onKeyDown={(e) => e.key === 'Enter' && handleUnlockShiftSubmit()}
+              className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-3 text-center tracking-[0.5em] text-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-6 transition-colors"
+              placeholder="••••••"
+              autoFocus
+            />
+
+            <button
+              onClick={handleUnlockShiftSubmit}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-3.5 rounded-lg transition-colors shadow-sm active:scale-95"
+            >
+              Разблокировать
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Universal Auth Modal */}
       {showAuthModal && selectedUserForAuth && (

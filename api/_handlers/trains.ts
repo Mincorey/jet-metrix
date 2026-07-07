@@ -30,8 +30,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .select().single()
       if (error) throw error
 
+      const rawD20 = d.Density_20 != null ? Number(d.Density_20) : null;
+      const formattedDensity20 = rawD20 != null
+        ? (rawD20 > 2 ? (rawD20 / 1000).toFixed(4) : rawD20.toFixed(4)) + ' г/см³'
+        : 'н/д';
+
       await sendTelegramNotification(
-        `🚂 <b>Замер ЖД-цистерны</b>\nНомер вагона: ${d.Number}\nТип вагона: ${d.Type}\nУровень: ${d.Average_Level} мм\nОбъем: ${Math.round(d.Volume || 0)} л. (${Math.round(d.Mass || 0)} кг)\nПлотность: ${d.Density} г/см. куб.\nТемпература: ${d.Temperature != null ? d.Temperature + ' °C' : 'н/д'}\nПлотность при 20°: ${d.Density_20 != null ? d.Density_20 + ' кг/м³' : 'н/д'}\nИсполнитель: ${d.Name}`
+        `🚂 <b>Замер ЖД-цистерны</b>\nНомер вагона: ${d.Number}\nТип вагона: ${d.Type}\nУровень: ${d.Average_Level} мм\nОбъем: ${Math.round(d.Volume || 0)} л. (${Math.round(d.Mass || 0)} кг)\nПлотность: ${d.Density} г/см. куб.\nТемпература: ${d.Temperature != null ? d.Temperature + ' °C' : 'н/д'}\nПлотность при 20: ${formattedDensity20}\nИсполнитель: ${d.Name}`
       )
       return res.json({ id: data.id, message: 'Вагон успешно сохранен!' })
     } catch (error) {

@@ -1,6 +1,12 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "crons": [
+    {
+      "path": "/api/system/auto-close-shift",
+      "schedule": "55 20 * * *"
+    }
+  ],
   "functions": {
     "api/[...path].ts": {
       "maxDuration": 60,

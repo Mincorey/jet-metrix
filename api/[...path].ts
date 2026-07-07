@@ -44,6 +44,7 @@ import handler_39 from './_handlers/tza.js';
 import handler_40 from './_handlers/workdays/close.js';
 import handler_41 from './_handlers/workdays/delete.js';
 import handler_42 from './_handlers/workdays/start.js';
+import handler_cron_close from './_handlers/system/auto-close-shift.js';
 import handler_43 from './_handlers/workdays.js';
 
 
@@ -124,6 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (route === 'system/core-metrics') return await handler_26(req, res);
     if (route === 'system/setup-status') return await handler_27(req, res);
     if (route === 'system/setup') return await handler_28(req, res);
+    if (route === 'system/auto-close-shift') return await handler_cron_close(req, res);
     if (route === 'tanks/all') return await handler_29(req, res);
     
     // tanks/[id]/status

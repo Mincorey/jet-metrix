@@ -32,11 +32,23 @@ const FIELD_NAMES: Record<string, string> = {
   Temperature: 'Температура (°C)',
   Type: 'Тип вагона',
   Number: 'Номер вагона',
+  Density_20: 'Плотность при 20',
 }
 
 const formatValue = (val: any) => {
   if (val === null || val === undefined) return '';
   return String(val);
+}
+
+const formatOpVal = (key: string, val: any) => {
+  if (val === null || val === undefined || val === '') return '';
+  if (key === 'Density_20') {
+    const num = Number(val);
+    if (!isNaN(num)) {
+      return num > 2 ? (num / 1000).toFixed(4) : num.toFixed(4);
+    }
+  }
+  return formatValue(val);
 }
 
 const TABLE_MAP: Record<string, string> = {
@@ -99,7 +111,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (fieldsToIgnore.includes(key)) continue;
           if (val === null || val === undefined || val === '') continue;
           const label = FIELD_NAMES[key] || key;
-          deletedDataStr += `${label}: ${val}\n`;
+          const displayVal = formatOpVal(key, val);
+          deletedDataStr += `${label}: ${displayVal}\n`;
         }
 
         const msg = `🚨 <b>ВНИМАНИЕ: УДАЛЕНИЕ ОПЕРАЦИИ!</b>\n🗑 <b>${opName}</b>\n\n👤 <b>Исполнитель (Смена):</b> ${employeeName}\n🕒 <b>Время удаления:</b> ${opDate}\n\n❌ <b>УДАЛЕННЫЕ ДАННЫЕ:</b>\n${deletedDataStr}`;
@@ -123,8 +136,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         for (const key of Object.keys(data)) {
           if (fieldsToIgnore.includes(key)) continue;
-          const oldVal = formatValue(oldRecord[key]);
-          const newVal = formatValue(data[key]);
+          const oldVal = formatOpVal(key, oldRecord[key]);
+          const newVal = formatOpVal(key, data[key]);
           if (oldVal !== newVal) {
             const label = FIELD_NAMES[key] || key;
             oldDataStr += `${label}: ${oldVal}\n`;

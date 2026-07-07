@@ -183,7 +183,7 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
       `Вагон №: ${resultData.Number} (тип ${resultData.Type})\n` +
       `Средний уровень: ${resultData.Average_Level} мм\n` +
       `Плотность: ${resultData.Density} г/см³ | Темп: ${resultData.Temperature} °C\n` +
-      `Плотность при 20°С: ${resultData.Density_20 != null ? resultData.Density_20 + ' кг/м³' : 'н/д'}\n` +
+      `Плотность при 20: ${resultData.Density_20 != null ? (Number(resultData.Density_20) > 2 ? (Number(resultData.Density_20) / 1000).toFixed(4) : Number(resultData.Density_20).toFixed(4)) + ' г/см³' : 'н/д'}\n` +
       `Объем: ${resultData.Volume} л.\n` +
       `Масса: ${resultData.Mass} кг.\n` +
       `========================\n` +
@@ -403,8 +403,12 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
                   <span className="font-mono font-medium text-white">{resultData.Density} / {resultData.Temperature}</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                  <span className="text-slate-400 text-sm">Плотность при 20°С:</span>
-                  <span className="font-mono font-medium text-yellow-300">{resultData.Density_20 != null ? `${resultData.Density_20} кг/м³` : 'н/д'}</span>
+                  <span className="text-slate-400 text-sm">Плотность при 20:</span>
+                  <span className="font-mono font-medium text-yellow-300">
+                    {resultData.Density_20 != null
+                      ? `${(Number(resultData.Density_20) > 2 ? (Number(resultData.Density_20) / 1000).toFixed(4) : Number(resultData.Density_20).toFixed(4))} г/см³`
+                      : 'н/д'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center border-b border-white/10 pb-2">
                   <span className="text-slate-400 text-sm">Объем:</span>
