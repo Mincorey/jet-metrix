@@ -72,6 +72,12 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
 
     const parsedDensity = normalizeDensity(density);
     const parsedTemp = parseFloat(temp.replace(',', '.'));
+
+    if (isNaN(parsedDensity) || parsedDensity <= 0 || isNaN(parsedTemp)) {
+      showToast('Укажите корректную плотность (> 0) и температуру!', 'error');
+      return;
+    }
+
     const ptKgM3 = parsedDensity * 1000;
     const density20 = calculateDensityAt20(ptKgM3, parsedTemp);
 
@@ -85,9 +91,7 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
 
       const getLevel = (rec: any) => Number((rec.level ?? rec.Level) || 0);
 
-      const maxLevel = Math.max(...targetTrain.Calibration.map(getLevel));
-      const scaleFactor = maxLevel < 1000 ? 10 : 1;
-      const targetLevel = avgLevel / scaleFactor;
+      const targetLevel = avgLevel;
 
       const exactRecord = targetTrain.Calibration.find((r: any) => getLevel(r) === targetLevel);
 

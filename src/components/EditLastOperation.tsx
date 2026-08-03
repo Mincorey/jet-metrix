@@ -168,9 +168,7 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
              return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
            };
 
-           const maxLevel = Math.max(...targetTank.Calibration.map(getLevel));
-           const scaleFactor = maxLevel < 1000 ? 10 : 1;
-           const targetLevel = avg / scaleFactor;
+           const targetLevel = avg;
 
            const exact = targetTank.Calibration.find((r: any) => getLevel(r) === targetLevel);
            if (exact) {

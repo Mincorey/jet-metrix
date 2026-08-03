@@ -116,8 +116,8 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
     const den = normalizeDensity(density);
     const temp = parseFloat(tempStr);
 
-    if (isNaN(den) || isNaN(temp)) {
-      showToast('Плотность и температура должны быть числами', 'error');
+    if (isNaN(den) || den <= 0 || isNaN(temp)) {
+      showToast('Укажите корректную плотность (> 0) и температуру!', 'error');
       return;
     }
 
@@ -136,9 +136,7 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
       return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
     };
 
-    const maxLevel = Math.max(...parsedCalibration.map(getLevel));
-    const scaleFactor = maxLevel < 1000 ? 10 : 1;
-    const targetLevel = avgLevel / scaleFactor;
+    const targetLevel = avgLevel;
 
     let calculatedVolume = 0;
     const exactMatch = parsedCalibration.find((r: any) => getLevel(r) === targetLevel);
@@ -479,7 +477,9 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
                     type="text"
                     inputMode="decimal"
                     value={density}
-                    onChange={(e) => setDensity(e.target.value.replace(/[^\d.,]/g, ''))}
+                    onChange={(e) => setDensity(e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, ''))}
+                    onFocus={(e) => !e.target.value && setDensity('0.')}
+                    maxLength={6}
                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white transition-all font-medium"
                     placeholder="0.0000"
                   />

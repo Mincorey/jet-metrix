@@ -75,6 +75,11 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
     const parsedDensity = normalizeDensity(density);
     const parsedTemp = parseFloat(temp.replace(',', '.'));
 
+    if (isNaN(parsedDensity) || parsedDensity <= 0 || isNaN(parsedTemp)) {
+      showToast('Укажите корректную плотность (> 0) и температуру!', 'error');
+      return;
+    }
+
     const selectedTankData = activeTanks.find(t => t.Name === selectedTank);
     if (!selectedTankData || !selectedTankData.Calibration) {
       showToast('Таблица градуировки не найдена', 'error');
@@ -88,9 +93,7 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
       return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
     };
 
-    const maxLevel = Math.max(...parsedCalibration.map(getLevel));
-    const scaleFactor = maxLevel < 1000 ? 10 : 1;
-    const targetLevel = avgLevel / scaleFactor;
+    const targetLevel = avgLevel;
 
     let calculatedVolume = 0;
     const exactMatch = parsedCalibration.find((r: any) => getLevel(r) === targetLevel);
