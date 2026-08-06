@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { getVolumeFromCalibration } from '../utils/calibrationHelper';
 
 interface EditLastOpProps {
   workdayId: number;
@@ -162,32 +163,9 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
        const targetTank = tanks.find(t => t.Name === (selectedOp.operationType === 'train' ? formData.Type : formData.Tank_Name));
        
        if (targetTank && targetTank.Calibration) {
-           const getLevel = (rec: any) => Number((rec.level ?? rec.Level) || 0);
-           const getVol = (rec: any) => {
-             const v = rec.volume ?? rec.Volume;
-             return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
-           };
-
-           const targetLevel = avg;
-
-           const exact = targetTank.Calibration.find((r: any) => getLevel(r) === targetLevel);
-           if (exact) {
-              newVol = getVol(exact);
-           } else {
-              const sorted = [...targetTank.Calibration].sort((a, b) => getLevel(a) - getLevel(b));
-              const lower = sorted.filter((r: any) => getLevel(r) < targetLevel).pop();
-              const upper = sorted.filter((r: any) => getLevel(r) > targetLevel).shift();
-              if (lower && upper) {
-                 const lL = getLevel(lower), uL = getLevel(upper);
-                 const lV = getVol(lower), uV = getVol(upper);
-                 newVol = lV + (uV - lV) * ((targetLevel - lL) / (uL - lL));
-              } else if (lower) {
-                 newVol = getVol(lower);
-              } else if (upper) {
-                 newVol = getVol(upper);
-              }
-           }
-           newVol = parseFloat(newVol.toFixed(2));
+           const category = selectedOp.operationType === 'train' ? 'train' : 'tank';
+           const calculatedVol = getVolumeFromCalibration(targetTank.Calibration, avg, category);
+           newVol = parseFloat(calculatedVol.toFixed(2));
         }
        newMass = parseFloat((newVol * dens).toFixed(2));
        formData.Average_Level = avg;

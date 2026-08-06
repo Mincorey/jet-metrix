@@ -5,6 +5,7 @@ import { WorkdayRecord } from '../data/WORKDAY';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
+import { getVolumeFromCalibration } from '../utils/calibrationHelper';
 
 function calculateDensityAt20(ptKgM3: number, temperature: number): number | null {
   let K: number;
@@ -84,39 +85,7 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
     let volume = 0;
     const targetTrain = activeTrains.find(t => t.Name === trainType);
     if (targetTrain && targetTrain.Calibration) {
-      const getVol = (rec: any) => {
-        const v = rec.volume ?? rec.Volume;
-        return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
-      };
-
-      const getLevel = (rec: any) => Number((rec.level ?? rec.Level) || 0);
-
-      const targetLevel = avgLevel;
-
-      const exactRecord = targetTrain.Calibration.find((r: any) => getLevel(r) === targetLevel);
-
-      let calculatedVolume = 0;
-
-      if (exactRecord) {
-        calculatedVolume = getVol(exactRecord);
-      } else {
-        const sorted = [...targetTrain.Calibration].sort((a, b) => getLevel(a) - getLevel(b));
-        const lowerRecord = sorted.filter((r: any) => getLevel(r) < targetLevel).pop();
-        const upperRecord = sorted.filter((r: any) => getLevel(r) > targetLevel).shift();
-
-        if (lowerRecord && upperRecord) {
-          const lL = getLevel(lowerRecord);
-          const uL = getLevel(upperRecord);
-          const volLower = getVol(lowerRecord);
-          const volUpper = getVol(upperRecord);
-          calculatedVolume = volLower + (volUpper - volLower) * ((targetLevel - lL) / (uL - lL));
-        } else if (lowerRecord) {
-          calculatedVolume = getVol(lowerRecord);
-        } else if (upperRecord) {
-          calculatedVolume = getVol(upperRecord);
-        }
-      }
-
+      const calculatedVolume = getVolumeFromCalibration(targetTrain.Calibration, avgLevel, 'train');
       volume = Math.round(calculatedVolume);
     }
 

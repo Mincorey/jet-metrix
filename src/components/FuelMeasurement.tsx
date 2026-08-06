@@ -8,6 +8,7 @@ import { addDailyMeasurementDB } from '../data/Daily_Measurements';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
+import { getVolumeFromCalibration } from '../utils/calibrationHelper';
 
 interface FuelMeasurementProps {
   currentWorkday: WorkdayRecord;
@@ -86,39 +87,10 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
       return;
     }
 
-    const parsedCalibration = selectedTankData.Calibration;
-    const getLevel = (rec: any) => Number((rec.level ?? rec.Level) || 0);
-    const getVol = (rec: any) => {
-      const v = rec.volume ?? rec.Volume;
-      return typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v;
-    };
-
-    const targetLevel = avgLevel;
-
-    let calculatedVolume = 0;
-    const exactMatch = parsedCalibration.find((r: any) => getLevel(r) === targetLevel);
-
-    if (exactMatch) {
-      calculatedVolume = getVol(exactMatch);
-    } else {
-      const sorted = [...parsedCalibration].sort((a, b) => getLevel(a) - getLevel(b));
-      const lower = sorted.filter((r: any) => getLevel(r) < targetLevel).pop();
-      const upper = sorted.filter((r: any) => getLevel(r) > targetLevel).shift();
-
-      if (lower && upper) {
-        const lL = getLevel(lower);
-        const uL = getLevel(upper);
-        const lV = getVol(lower);
-        const uV = getVol(upper);
-        calculatedVolume = lV + (uV - lV) * ((targetLevel - lL) / (uL - lL));
-      } else if (lower) {
-        calculatedVolume = getVol(lower);
-      } else if (upper) {
-        calculatedVolume = getVol(upper);
-      } else {
-        showToast(`Объем для уровня ${avgLevel} мм не найден в таблице!`, "error");
-        return;
-      }
+    const calculatedVolume = getVolumeFromCalibration(selectedTankData.Calibration, avgLevel, selectedTankData.Category || 'tank');
+    if (calculatedVolume <= 0) {
+      showToast(`Объем для уровня ${avgLevel} мм не найден в таблице!`, "error");
+      return;
     }
 
     const volume = Number(calculatedVolume.toFixed(2));
