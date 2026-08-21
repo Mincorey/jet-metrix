@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, ArrowLeft, ChevronRight, Search, AlertCircle, Filter } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { getVolumeFromCalibration } from '../utils/calibrationHelper';
+import { validateTankOperation, getTankLimits, fetchParkStateMap, TankValidationResult } from '../utils/tankLimits';
+import TankLimitErrorModal from './TankLimitErrorModal';
 
 interface EditLastOpProps {
   workdayId: number;
@@ -83,6 +85,7 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [validationError, setValidationError] = useState<TankValidationResult | null>(null);
 
   const fetchOperations = async () => {
     try {
@@ -199,6 +202,93 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
       }
       newMass = parseFloat((newVol * dens).toFixed(2));
       formData.Average_Level = avg;
+    }
+
+    // Проверка пределов наполнения и незабираемого остатка
+    const parkMap = await fetchParkStateMap();
+
+    if (['reception', 'reception_auto'].includes(selectedOp.operationType)) {
+      const tankName = formData.Tank_Name || selectedOp.Tank_Name;
+      const currentVol = parkMap[tankName] ?? 0;
+      const delta = newVol - (selectedOp.Volume || 0);
+      const val = validateTankOperation({
+        tankName,
+        currentVolume: currentVol,
+        deltaVolume: delta,
+        operationTypeLabel: 'Корректировка приема',
+      });
+      if (!val.isValid) {
+        setValidationError(val);
+        return;
+      }
+    }
+
+    if (selectedOp.operationType === 'dispense_tza') {
+      const tankName = formData.Tank_Name || selectedOp.Tank_Name;
+      const currentVol = parkMap[tankName] ?? 0;
+      const delta = -(newVol - (selectedOp.Volume || 0));
+      const val = validateTankOperation({
+        tankName,
+        currentVolume: currentVol,
+        deltaVolume: delta,
+        operationTypeLabel: 'Корректировка выдачи в ТЗА',
+      });
+      if (!val.isValid) {
+        setValidationError(val);
+        return;
+      }
+    }
+
+    if (selectedOp.operationType === 'in_warehouse') {
+      const fromTank = formData.From_Tank || selectedOp.From_Tank;
+      const toTank = formData.To_Tank || selectedOp.To_Tank;
+      const delta = newVol - (selectedOp.Volume || 0);
+
+      const fromVol = parkMap[fromTank] ?? 0;
+      const toVol = parkMap[toTank] ?? 0;
+
+      const fromVal = validateTankOperation({
+        tankName: fromTank,
+        currentVolume: fromVol,
+        deltaVolume: -delta,
+        operationTypeLabel: 'Корректировка перекачки (исходный)',
+      });
+      if (!fromVal.isValid) {
+        setValidationError(fromVal);
+        return;
+      }
+
+      const toVal = validateTankOperation({
+        tankName: toTank,
+        currentVolume: toVol,
+        deltaVolume: delta,
+        operationTypeLabel: 'Корректировка перекачки (целевой)',
+      });
+      if (!toVal.isValid) {
+        setValidationError(toVal);
+        return;
+      }
+    }
+
+    if (selectedOp.operationType === 'measurement') {
+      const tankName = formData.Tank_Name || selectedOp.Tank_Name;
+      const limits = getTankLimits(tankName);
+      if (limits.hasLimits && newVol > limits.maxVolume) {
+        const overflow = newVol - limits.maxVolume;
+        setValidationError({
+          isValid: false,
+          errorType: 'overflow',
+          title: 'Превышение предела наполнения резервуара!',
+          message: `Введенный замер уровня в резервуаре «${tankName}» соответствует объему ${Math.round(newVol).toLocaleString('ru-RU')} л, что превышает максимально допустимый предел наполнения (${limits.maxVolume.toLocaleString('ru-RU')} л) на ${Math.round(overflow).toLocaleString('ru-RU')} л. Проверьте правильность введенных замеров уровня (мм).`,
+          tankName,
+          currentVolume: 0,
+          operationVolume: Math.round(newVol),
+          projectedVolume: Math.round(newVol),
+          limitVolume: limits.maxVolume,
+          diffVolume: Math.round(overflow),
+        });
+        return;
+      }
     }
 
     const payload = { operationType: selectedOp.operationType, id: selectedOp.id, data: { ...formData, Volume: newVol, Mass: newMass } };
@@ -532,6 +622,12 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
           </div>
         </div>
       )}
+
+      {/* MODAL ПРЕДУПРЕЖДЕНИЯ О ЛИМИТАХ РЕЗЕРВУАРА */}
+      <TankLimitErrorModal 
+        validation={validationError} 
+        onClose={() => setValidationError(null)} 
+      />
     </div>
   );
 }

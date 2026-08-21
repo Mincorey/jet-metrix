@@ -7,6 +7,8 @@ import { WorkdayRecord } from '../data/WORKDAY';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
+import { validateTankOperation, fetchParkStateMap, TankValidationResult } from '../utils/tankLimits';
+import TankLimitErrorModal from './TankLimitErrorModal';
 
 interface InWarehouseTransferProps {
   currentUser: { Name: string };
@@ -26,6 +28,7 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
   const [density, setDensity] = useState('');
   const [temperature, setTemperature] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [validationError, setValidationError] = useState<TankValidationResult | null>(null);
   const [resultData, setResultData] = useState<any>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
@@ -95,6 +98,36 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
     }
 
     const volume = parseFloat((after - before).toFixed(2));
+
+    // Проверка лимитов для обоих резервуаров (исходный и целевой)
+    const parkMap = await fetchParkStateMap();
+    const fromCurVol = parkMap[fromTank!] ?? 0;
+    const toCurVol = parkMap[toTank!] ?? 0;
+
+    // 1. Проверка исходного резервуара на незабираемый остаток
+    const fromValidation = validateTankOperation({
+      tankName: fromTank!,
+      currentVolume: fromCurVol,
+      deltaVolume: -volume,
+      operationTypeLabel: 'Перекачка (исходный резервуар)',
+    });
+    if (!fromValidation.isValid) {
+      setValidationError(fromValidation);
+      return;
+    }
+
+    // 2. Проверка целевого резервуара на переполнение
+    const toValidation = validateTankOperation({
+      tankName: toTank!,
+      currentVolume: toCurVol,
+      deltaVolume: volume,
+      operationTypeLabel: 'Перекачка (целевой резервуар)',
+    });
+    if (!toValidation.isValid) {
+      setValidationError(toValidation);
+      return;
+    }
+
     const mass = parseFloat((volume * dens).toFixed(2));
     const dateStr = new Date().toLocaleString('ru-RU', { 
       day: '2-digit', month: '2-digit', year: 'numeric', 
@@ -425,6 +458,12 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
           </button>
         </div>
       </div>
+
+      {/* MODAL ПРЕДУПРЕЖДЕНИЯ О ЛИМИТАХ РЕЗЕРВУАРА */}
+      <TankLimitErrorModal 
+        validation={validationError} 
+        onClose={() => setValidationError(null)} 
+      />
     </div>
   );
 }

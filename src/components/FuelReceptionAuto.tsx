@@ -6,6 +6,8 @@ import { getLatestDensityDB } from '../data/Daily_Measurements';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
+import { validateTankOperation, getTankCurrentVolume, TankValidationResult } from '../utils/tankLimits';
+import TankLimitErrorModal from './TankLimitErrorModal';
 
 interface FuelReceptionAutoProps {
   currentWorkday: WorkdayRecord;
@@ -23,6 +25,7 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
   const [density, setDensity] = useState('');
   const [temperature, setTemperature] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [validationError, setValidationError] = useState<TankValidationResult | null>(null);
 
   const [resultData, setResultData] = useState<any>(null);
 
@@ -107,16 +110,30 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
       return;
     }
 
+    const volume = parseFloat((after - before).toFixed(2));
+
+    const parsedDensity = normalizeDensity(density);
+    if (isNaN(parsedDensity) || parsedDensity <= 0) {
+      showToast('Некорректная плотность.', 'error');
+      return;
+    }
+
+    // Проверка пределов наполнения резервуара
+    const currentTankVol = await getTankCurrentVolume(selectedTank!);
+    const validation = validateTankOperation({
+      tankName: selectedTank!,
+      currentVolume: currentTankVol,
+      deltaVolume: volume,
+      operationTypeLabel: 'Прием из АЦ',
+    });
+
+    if (!validation.isValid) {
+      setValidationError(validation);
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const volume = parseFloat((after - before).toFixed(2));
-
-      const parsedDensity = normalizeDensity(density);
-      if (isNaN(parsedDensity) || parsedDensity <= 0) {
-        showToast('Некорректная плотность.', 'error');
-        return;
-      }
-
       const mass = parseFloat((volume * parsedDensity).toFixed(2));
 
       const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
@@ -461,6 +478,12 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
           </div>
         </div>
       )}
+
+      {/* MODAL ПРЕДУПРЕЖДЕНИЯ О ЛИМИТАХ РЕЗЕРВУАРА */}
+      <TankLimitErrorModal 
+        validation={validationError} 
+        onClose={() => setValidationError(null)} 
+      />
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { getLatestDensityDB } from '../data/Daily_Measurements';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
+import { validateTankOperation, getTankCurrentVolume, TankValidationResult } from '../utils/tankLimits';
+import TankLimitErrorModal from './TankLimitErrorModal';
 
 interface FuelReceptionProps {
   currentWorkday: WorkdayRecord;
@@ -22,6 +24,7 @@ export default function FuelReception({ currentWorkday, onBack }: FuelReceptionP
   const [counterAfter, setCounterAfter] = useState('');
   const [density, setDensity] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [validationError, setValidationError] = useState<TankValidationResult | null>(null);
 
   const [resultData, setResultData] = useState<any>(null);
 
@@ -93,6 +96,20 @@ export default function FuelReception({ currentWorkday, onBack }: FuelReceptionP
     const parsedDensity = normalizeDensity(density);
     if (isNaN(parsedDensity) || parsedDensity <= 0) {
       showToast('Некорректная плотность.', 'error');
+      return;
+    }
+
+    // Проверка пределов наполнения резервуара
+    const currentTankVol = await getTankCurrentVolume(selectedTank!);
+    const validation = validateTankOperation({
+      tankName: selectedTank!,
+      currentVolume: currentTankVol,
+      deltaVolume: volume,
+      operationTypeLabel: 'Прием топлива',
+    });
+
+    if (!validation.isValid) {
+      setValidationError(validation);
       return;
     }
 
@@ -404,6 +421,12 @@ export default function FuelReception({ currentWorkday, onBack }: FuelReceptionP
           </div>
         </div>
       )}
+
+      {/* MODAL ПРЕДУПРЕЖДЕНИЯ О ЛИМИТАХ РЕЗЕРВУАРА */}
+      <TankLimitErrorModal 
+        validation={validationError} 
+        onClose={() => setValidationError(null)} 
+      />
     </div>
   );
 }

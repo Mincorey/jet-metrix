@@ -8,6 +8,8 @@ import { getLatestDensityDB } from '../data/Daily_Measurements';
 import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
+import { validateTankOperation, getTankCurrentVolume, TankValidationResult } from '../utils/tankLimits';
+import TankLimitErrorModal from './TankLimitErrorModal';
 
 // Import tables (assuming they are used elsewhere or just kept)
 interface FuelDispensingTZAProps {
@@ -27,6 +29,7 @@ export default function FuelDispensingTZA({ currentWorkday, onBack }: FuelDispen
   const [counterAfter, setCounterAfter] = useState('');
   const [density, setDensity] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [validationError, setValidationError] = useState<TankValidationResult | null>(null);
 
   const [resultData, setResultData] = useState<any>(null);
 
@@ -134,21 +137,35 @@ export default function FuelDispensingTZA({ currentWorkday, onBack }: FuelDispen
       return;
     }
 
+    const volume = parseFloat((after - before).toFixed(2));
+
+    if (volume > 25000) {
+      showToast('Объем выдачи не может превышать 25 000 л. Проверьте показания счетчиков!', 'error');
+      return;
+    }
+
+    const parsedDensity = normalizeDensity(density);
+    if (isNaN(parsedDensity) || parsedDensity <= 0) {
+      showToast('Некорректная плотность.', 'error');
+      return;
+    }
+
+    // Проверка лимитов резервуара (незабираемый остаток при выдаче)
+    const currentTankVol = await getTankCurrentVolume(selectedTank!);
+    const validation = validateTankOperation({
+      tankName: selectedTank!,
+      currentVolume: currentTankVol,
+      deltaVolume: -volume,
+      operationTypeLabel: 'Выдача в ТЗА',
+    });
+
+    if (!validation.isValid) {
+      setValidationError(validation);
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const volume = parseFloat((after - before).toFixed(2));
-
-      if (volume > 25000) {
-        showToast('Объем выдачи не может превышать 25 000 л. Проверьте показания счетчиков!', 'error');
-        return;
-      }
-
-      const parsedDensity = normalizeDensity(density);
-      if (isNaN(parsedDensity) || parsedDensity <= 0) {
-        showToast('Некорректная плотность.', 'error');
-        return;
-      }
-
       const mass = parseFloat((volume * parsedDensity).toFixed(2));
 
       const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
@@ -508,6 +525,12 @@ export default function FuelDispensingTZA({ currentWorkday, onBack }: FuelDispen
           </div>
         </div>
       )}
+
+      {/* MODAL ПРЕДУПРЕЖДЕНИЯ О ЛИМИТАХ РЕЗЕРВУАРА */}
+      <TankLimitErrorModal 
+        validation={validationError} 
+        onClose={() => setValidationError(null)} 
+      />
     </div>
   );
 }

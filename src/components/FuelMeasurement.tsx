@@ -9,6 +9,8 @@ import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
 import { getVolumeFromCalibration } from '../utils/calibrationHelper';
+import { getTankLimits, TankValidationResult } from '../utils/tankLimits';
+import TankLimitErrorModal from './TankLimitErrorModal';
 
 interface FuelMeasurementProps {
   currentWorkday: WorkdayRecord;
@@ -19,6 +21,7 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
   const { showToast } = useToast();
   const [activeTanks, setActiveTanks] = useState<any[]>([]);
   const [selectedTank, setSelectedTank] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<TankValidationResult | null>(null);
 
   useEffect(() => {
     const fetchTanks = async () => {
@@ -94,6 +97,26 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
     }
 
     const volume = Number(calculatedVolume.toFixed(2));
+
+    // Проверка предельного наполнения резервуара
+    const limits = getTankLimits(selectedTank!);
+    if (limits.hasLimits && volume > limits.maxVolume) {
+      const overflow = volume - limits.maxVolume;
+      setValidationError({
+        isValid: false,
+        errorType: 'overflow',
+        title: 'Превышение предела наполнения резервуара!',
+        message: `Введенный замер уровня (средний уровень: ${avgLevel} мм) соответствует объему ${Math.round(volume).toLocaleString('ru-RU')} л, что превышает максимально допустимый предел наполнения (${limits.maxVolume.toLocaleString('ru-RU')} л) на ${Math.round(overflow).toLocaleString('ru-RU')} л. Проверьте правильность введенных замеров уровня (мм).`,
+        tankName: selectedTank!,
+        currentVolume: 0,
+        operationVolume: Math.round(volume),
+        projectedVolume: Math.round(volume),
+        limitVolume: limits.maxVolume,
+        diffVolume: Math.round(overflow),
+      });
+      return;
+    }
+
     const mass = parseFloat((volume * parsedDensity).toFixed(2));
 
     setIsSaving(true);
@@ -499,6 +522,12 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
           </div>
         </div>
       )}
+
+      {/* MODAL ПРЕДУПРЕЖДЕНИЯ О ЛИМИТАХ РЕЗЕРВУАРА */}
+      <TankLimitErrorModal 
+        validation={validationError} 
+        onClose={() => setValidationError(null)} 
+      />
     </div>
   );
 }

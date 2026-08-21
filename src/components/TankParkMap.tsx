@@ -44,17 +44,21 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
   const TankCylinder = ({ tank }: { tank: TankData; key?: string }) => {
     const percent = Math.min(Math.round((tank.volume / tank.maxCapacity) * 100), 100);
     const visualPercent = Math.max(0, Math.min(100, percent));
+    const minLimit = tank.name.includes('РГС-100') ? 2000 : tank.name.includes('РГС-50') ? 600 : 0;
     
     let fillColor = 'bg-emerald-500';
-    if (percent < 20) fillColor = 'bg-red-500';
-    else if (percent <= 80) fillColor = 'bg-amber-400';
+    if (tank.volume > tank.maxCapacity) fillColor = 'bg-red-600 animate-pulse';
+    else if (tank.volume <= minLimit) fillColor = 'bg-red-500';
+    else if (percent < 20) fillColor = 'bg-amber-500';
+    else if (percent <= 85) fillColor = 'bg-emerald-500';
+    else fillColor = 'bg-blue-500';
 
     return (
       <div 
         className="flex flex-col items-center cursor-pointer transition-transform hover:scale-105"
         onClick={() => setSelectedTank(tank)}
       >
-        <div className="relative w-24 h-48 sm:h-56 bg-white dark:bg-slate-800 border-4 border-slate-300 dark:border-slate-600 rounded-t-3xl rounded-b-3xl overflow-hidden shadow-inner">
+        <div className={`relative w-24 h-48 sm:h-56 bg-white dark:bg-slate-800 border-4 ${tank.volume > tank.maxCapacity ? 'border-red-500 ring-4 ring-red-500/30' : 'border-slate-300 dark:border-slate-600'} rounded-t-3xl rounded-b-3xl overflow-hidden shadow-inner`}>
           {/* Уровень жидкости */}
           <div 
             className={`absolute bottom-0 w-full transition-all duration-1000 ease-in-out ${fillColor}`}
@@ -72,7 +76,7 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
             </span>
           </div>
         </div>
-        <span className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-300 tracking-tight">
+        <span className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-300 tracking-tight text-center">
           {tank.name}
         </span>
       </div>
@@ -180,10 +184,20 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
 
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-3xl border border-emerald-100 dark:border-emerald-800 flex items-start gap-4">
                   <Database className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mt-1" />
-                  <div>
-                    <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-1">Свободный объем</p>
-                    <p className="text-sm text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed font-medium">
-                      Можно долить еще <span className="text-lg font-bold text-emerald-600 dark:text-emerald-300">{(selectedTank.maxCapacity - selectedTank.volume).toLocaleString('ru-RU')}</span> литров до полного объема.
+                  <div className="w-full">
+                    <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-1">Параметры и лимиты</p>
+                    <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1 mb-2">
+                      <div className="flex justify-between">
+                        <span>Предел наполнения:</span>
+                        <span className="font-bold font-mono">{selectedTank.maxCapacity.toLocaleString('ru-RU')} л</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Незабираемый остаток:</span>
+                        <span className="font-bold font-mono">{selectedTank.name.includes('РГС-100') ? '2 000' : selectedTank.name.includes('РГС-50') ? '600' : '—'} л</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-emerald-700/90 dark:text-emerald-400/90 leading-relaxed font-medium pt-1 border-t border-emerald-200 dark:border-emerald-800/60">
+                      Свободный объем: <span className="text-base font-bold text-emerald-600 dark:text-emerald-300 font-mono">{Math.max(0, selectedTank.maxCapacity - selectedTank.volume).toLocaleString('ru-RU')}</span> л до предела.
                     </p>
                   </div>
                 </div>
