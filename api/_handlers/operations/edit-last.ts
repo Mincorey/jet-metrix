@@ -73,6 +73,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: oldRecord } = await supabase.from(table).select('*').eq('id', id).single()
       if (!oldRecord) return sendError(res, 404, 'Операция не найдена')
 
+      // Verify that the associated workday is currently Open
+      if (oldRecord.Workday_ID) {
+        const { data: workday, error: wdError } = await supabase
+          .from('Workdays')
+          .select('Workday_Status')
+          .eq('id', oldRecord.Workday_ID)
+          .single()
+
+        if (!wdError && workday && workday.Workday_Status !== 'Open') {
+          return sendError(res, 400, 'Редактирование или удаление операций невозможно: данная смена уже закрыта.')
+        }
+      }
+
       if (operationType === 'dispense_tza' || operationType === 'dispense_vs') {
 
         if (oldRecord?.TZA) {

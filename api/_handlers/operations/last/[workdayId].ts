@@ -14,25 +14,30 @@ const OPERATION_TABLES = [
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { workdayId, limit } = req.query
-  const limitVal = limit ? parseInt(limit as string) : 1
+  const hasLimit = limit !== undefined && limit !== 'all' && limit !== ''
+  const limitVal = hasLimit ? parseInt(limit as string, 10) : null
 
   if (req.method === 'GET') {
     try {
       const results = await Promise.all(
         OPERATION_TABLES.map(({ table, type }) => {
-          return supabase
+          let query = supabase
             .from(table)
             .select('*')
             .eq('Workday_ID', workdayId)
-            .order('id', { ascending: false })
-            .limit(limitVal)
-            .then(({ data, error }) => {
-              if (error) {
-                console.error(`Error querying ${table}:`, error.message);
-                return [];
-              }
-              return (data || []).map(op => ({ ...op, operationType: type }));
-            });
+            .order('id', { ascending: false });
+
+          if (limitVal && !isNaN(limitVal)) {
+            query = query.limit(limitVal);
+          }
+
+          return query.then(({ data, error }) => {
+            if (error) {
+              console.error(`Error querying ${table}:`, error.message);
+              return [];
+            }
+            return (data || []).map(op => ({ ...op, operationType: type }));
+          });
         })
       )
 
@@ -62,7 +67,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json(allOps[0] || { error: 'Операции не найдены' });
       }
 
-      return res.json(allOps.slice(0, limitVal));
+      if (limitVal && !isNaN(limitVal)) {
+        return res.json(allOps.slice(0, limitVal));
+      }
+
+      return res.json(allOps);
     } catch (error) {
       console.error('operations/last error:', error)
       return sendError(res, 500, 'Ошибка сервера')
