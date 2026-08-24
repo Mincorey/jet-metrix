@@ -70,36 +70,13 @@ export async function getParkStateData() {
         maxVol = Math.max(...cal.map((r: any) => Number(r.volume ?? r.Volume) || 0))
       }
     } catch { }
-
-    let maxLimit = 52600;
-    let minLimit = 600;
-    let maxCapacity = 52600;
-
-    if (tank.Name.includes('РГС-100')) {
-      maxLimit = 98000;
-      minLimit = 2000;
-      maxCapacity = 98000;
-    } else if (tank.Name.includes('РГС-50')) {
-      maxLimit = 52600;
-      minLimit = 600;
-      maxCapacity = 52600;
-    } else if (tank.Name.includes('РК-1')) {
-      maxLimit = 1000;
-      minLimit = 0;
-      maxCapacity = 1000;
-    } else {
-      maxLimit = maxVol || 50000;
-      minLimit = 0;
-      maxCapacity = maxVol || 50000;
-    }
+    const maxCapacity = Math.ceil(maxVol / 1000) * 1000 || (tank.Name.includes('РГС-100') ? 100000 : 50000)
 
     return {
       name: tank.Name,
       volume: Math.round(currentVolume),
       mass: Math.round(currentMass),
       maxCapacity,
-      maxLimit,
-      minLimit,
       density: densRows.data?.[0]?.Density ?? (lastMeas?.Density ?? 0),
       temperature: tempRows.data?.[0]?.Temperature ?? (lastMeas?.Temperature ?? 0),
     }
