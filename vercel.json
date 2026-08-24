@@ -4,7 +4,7 @@
   "crons": [
     {
       "path": "/api/system/auto-close-shift",
-      "schedule": "55 20 * * *"
+      "schedule": "0 0 * * *"
     }
   ],
   "functions": {
