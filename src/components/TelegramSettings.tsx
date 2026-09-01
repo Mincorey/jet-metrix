@@ -51,6 +51,7 @@ export default function TelegramSettings({ onBack }: TelegramSettingsProps) {
     };
 
     const handleSave = async () => {
+        if (saving) return;
         setSaving(true);
         try {
             const response = await fetch('/api/settings/telegram', {
@@ -73,6 +74,7 @@ export default function TelegramSettings({ onBack }: TelegramSettingsProps) {
     };
 
     const handleTest = async () => {
+        if (testing) return;
         setTesting(true);
         try {
             const response = await fetch('/api/settings/telegram/test', {

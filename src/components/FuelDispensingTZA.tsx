@@ -119,6 +119,8 @@ export default function FuelDispensingTZA({ currentWorkday, onBack }: FuelDispen
   };
 
   const handleCalculateAndSave = async () => {
+    if (isSaving) return;
+
     if (!counterBefore.trim() || !counterAfter.trim() || !density.trim()) {
       showToast('Заполните все поля!', 'error');
       return;
@@ -150,22 +152,22 @@ export default function FuelDispensingTZA({ currentWorkday, onBack }: FuelDispen
       return;
     }
 
-    // Проверка лимитов резервуара (незабираемый остаток при выдаче)
-    const currentTankVol = await getTankCurrentVolume(selectedTank!);
-    const validation = validateTankOperation({
-      tankName: selectedTank!,
-      currentVolume: currentTankVol,
-      deltaVolume: -volume,
-      operationTypeLabel: 'Выдача в ТЗА',
-    });
-
-    if (!validation.isValid) {
-      setValidationError(validation);
-      return;
-    }
-
     setIsSaving(true);
     try {
+      // Проверка лимитов резервуара (незабираемый остаток при выдаче)
+      const currentTankVol = await getTankCurrentVolume(selectedTank!);
+      const validation = validateTankOperation({
+        tankName: selectedTank!,
+        currentVolume: currentTankVol,
+        deltaVolume: -volume,
+        operationTypeLabel: 'Выдача в ТЗА',
+      });
+
+      if (!validation.isValid) {
+        setValidationError(validation);
+        return;
+      }
+
       const mass = parseFloat((volume * parsedDensity).toFixed(2));
 
       const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');

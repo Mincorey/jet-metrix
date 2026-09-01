@@ -66,6 +66,8 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
+
     if (!l1.trim() || !l2.trim() || !l3.trim() || !density.trim() || !temp.trim()) {
       showToast('Заполните все поля!', 'error');
       return;
@@ -98,29 +100,28 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
 
     const volume = Number(calculatedVolume.toFixed(2));
 
-    // Проверка предельного наполнения резервуара
-    const limits = getTankLimits(selectedTank!);
-    if (limits.hasLimits && volume > limits.maxVolume) {
-      const overflow = volume - limits.maxVolume;
-      setValidationError({
-        isValid: false,
-        errorType: 'overflow',
-        title: 'Превышение предела наполнения резервуара!',
-        message: `Введенный замер уровня (средний уровень: ${avgLevel} мм) соответствует объему ${Math.round(volume).toLocaleString('ru-RU')} л, что превышает максимально допустимый предел наполнения (${limits.maxVolume.toLocaleString('ru-RU')} л) на ${Math.round(overflow).toLocaleString('ru-RU')} л. Проверьте правильность введенных замеров уровня (мм).`,
-        tankName: selectedTank!,
-        currentVolume: 0,
-        operationVolume: Math.round(volume),
-        projectedVolume: Math.round(volume),
-        limitVolume: limits.maxVolume,
-        diffVolume: Math.round(overflow),
-      });
-      return;
-    }
-
-    const mass = parseFloat((volume * parsedDensity).toFixed(2));
-
     setIsSaving(true);
     try {
+      // Проверка предельного наполнения резервуара
+      const limits = getTankLimits(selectedTank!);
+      if (limits.hasLimits && volume > limits.maxVolume) {
+        const overflow = volume - limits.maxVolume;
+        setValidationError({
+          isValid: false,
+          errorType: 'overflow',
+          title: 'Превышение предела наполнения резервуара!',
+          message: `Введенный замер уровня (средний уровень: ${avgLevel} мм) соответствует объему ${Math.round(volume).toLocaleString('ru-RU')} л, что превышает максимально допустимый предел наполнения (${limits.maxVolume.toLocaleString('ru-RU')} л) на ${Math.round(overflow).toLocaleString('ru-RU')} л. Проверьте правильность введенных замеров уровня (мм).`,
+          tankName: selectedTank!,
+          currentVolume: 0,
+          operationVolume: Math.round(volume),
+          projectedVolume: Math.round(volume),
+          limitVolume: limits.maxVolume,
+          diffVolume: Math.round(overflow),
+        });
+        return;
+      }
+
+      const mass = parseFloat((volume * parsedDensity).toFixed(2));
       const currentDate = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
 
       const measurement = {

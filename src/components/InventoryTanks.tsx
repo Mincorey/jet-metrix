@@ -159,6 +159,7 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
   };
 
   const handleSaveInventoryAct = async () => {
+    if (isSaving) return;
     setIsSaving(true);
     let payload: any = null;
     try {

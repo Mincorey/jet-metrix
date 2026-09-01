@@ -77,6 +77,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     };
 
     const handleAddEmployee = async () => {
+        if (isSaving) return;
         if (!newName.trim()) {
             showToast('Введите Ф. И. О. сотрудника', 'error');
             return;
@@ -127,6 +128,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     };
 
     const handleToggleStatus = async (id: number, currentStatus: string) => {
+        if (isSaving) return;
         const newStatus = currentStatus === 'Active' ? 'Archived' : 'Active';
         try {
             setIsSaving(true);
@@ -151,6 +153,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     };
 
     const handleDeleteEmployee = async (id: number) => {
+        if (isSaving) return;
         if (!window.confirm("Удалить сотрудника навсегда?")) return;
         try {
             setIsSaving(true);
@@ -173,6 +176,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     };
 
     const handleEditEmployee = async () => {
+        if (isSaving) return;
         if (!editingEmployee) return;
         if (!editName.trim()) {
             showToast('Введите Ф. И. О. сотрудника', 'error');
@@ -245,6 +249,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     };
 
     const handleSaveTza = async () => {
+        if (isSaving) return;
         if (!tzaName.trim() || !tzaVolume.trim()) {
             showToast('Заполните Номер/Имя и Объем', 'error');
             return;
@@ -280,6 +285,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     };
 
     const handleDeleteTza = async (id: number) => {
+        if (isSaving) return;
         if (!window.confirm("Вы уверены, что хотите удалить этот ТЗА?")) return;
         try {
             setIsSaving(true);
@@ -299,6 +305,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     };
 
     const handleToggleMonitoring = async (id: number, currentStatus: number | undefined) => {
+        if (isSaving) return;
         try {
             setIsSaving(true);
             const newStatus = currentStatus === 1 ? false : true;
@@ -323,6 +330,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     };
 
     const handleClearAll = async () => {
+        if (isSaving) return;
         try {
             setIsSaving(true);
             const response = await fetch('/api/employees/all', {
@@ -344,6 +352,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     };
 
     const handleClearOperationsDB = async () => {
+        if (isSaving) return;
         try {
             setIsSaving(true);
             const response = await fetch(`/api/database/clear-operations`, {

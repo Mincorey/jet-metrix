@@ -59,6 +59,7 @@ export default function App() {
   const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
   const [sendingChecklist, setSendingChecklist] = useState(false);
   const [isClosingShift, setIsClosingShift] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [shiftsLoaded, setShiftsLoaded] = useState(false);
   const [unlockPin, setUnlockPin] = useState('');
   const [isShiftUnlocked, setIsShiftUnlocked] = useState(true);
@@ -297,6 +298,7 @@ export default function App() {
   };
 
   const handleCloseShift = async () => {
+    if (isClosingShift) return;
     if (!currentWorkday) return;
 
     setIsClosingShift(true);
@@ -312,11 +314,13 @@ export default function App() {
   };
 
   const handleDeleteShift = () => {
+    if (isClosingShift) return;
     if (!currentWorkday) return;
     setShowDeleteConfirm(true);
   };
 
 const handleSendChecklist = async () => {
+    if (sendingChecklist) return;
     if (!currentWorkday || !currentUser) return;
     setSendingChecklist(true);
     try {
@@ -352,6 +356,7 @@ const handleSendChecklist = async () => {
   };
 
   const confirmDeleteShift = async () => {
+    if (isClosingShift) return;
     if (!currentWorkday) return;
     
     setIsClosingShift(true);
@@ -393,6 +398,7 @@ const handleSendChecklist = async () => {
   );
 
   const handleAuthSubmit = async () => {
+    if (isAuthenticating) return;
     if (!selectedUserForAuth) return;
 
     if (authPin !== selectedUserForAuth.Password && selectedUserForAuth.Password !== '') {
@@ -401,43 +407,48 @@ const handleSendChecklist = async () => {
       return;
     }
 
-    // Success Auth
-    setCurrentUser(selectedUserForAuth);
-    localStorage.setItem('sgsm_saved_user', JSON.stringify(selectedUserForAuth));
-    setShowAuthModal(false);
-    setAuthPin('');
-    showSeniorList && setShowSeniorList(false);
-    showAdminList && setShowAdminList(false);
+    setIsAuthenticating(true);
+    try {
+      // Success Auth
+      setCurrentUser(selectedUserForAuth);
+      localStorage.setItem('sgsm_saved_user', JSON.stringify(selectedUserForAuth));
+      setShowAuthModal(false);
+      setAuthPin('');
+      showSeniorList && setShowSeniorList(false);
+      showAdminList && setShowAdminList(false);
 
-    if (selectedUserForAuth.Role === 'Administrator' || selectedUserForAuth.Role === 'Администратор') {
-      if (authDestination === 'dashboard') {
-        localStorage.setItem('sgsm_current_view', 'dashboard');
-        setCurrentPage('dashboard');
+      if (selectedUserForAuth.Role === 'Administrator' || selectedUserForAuth.Role === 'Администратор') {
+        if (authDestination === 'dashboard') {
+          localStorage.setItem('sgsm_current_view', 'dashboard');
+          setCurrentPage('dashboard');
+        } else {
+          localStorage.setItem('sgsm_current_view', 'admin');
+          setCurrentPage('admin-panel');
+        }
+        setAuthDestination(null);
+      } else if (selectedUserForAuth.Role === 'Supervisor' || selectedUserForAuth.Role === 'Старший авиатехник') {
+        const openShift = getOpenWorkday();
+        if (openShift) {
+          // override name but keep shift id
+          setCurrentWorkday({ ...openShift, Name: selectedUserForAuth.Name });
+        } else {
+          // no shift is fine for senior, they just get panel and can't do measurements unless shift opens, 
+          // actually they can do inventory anytime
+        }
+        setCurrentPage('senior-tech-panel');
       } else {
-        localStorage.setItem('sgsm_current_view', 'admin');
-        setCurrentPage('admin-panel');
+        // Regular Tech
+        const newWorkday = await openWorkdayDB(selectedUserForAuth.Name);
+        if (newWorkday) {
+          setCurrentWorkday(newWorkday);
+          setCurrentPage('workday');
+        }
       }
-      setAuthDestination(null);
-    } else if (selectedUserForAuth.Role === 'Supervisor' || selectedUserForAuth.Role === 'Старший авиатехник') {
-      const openShift = getOpenWorkday();
-      if (openShift) {
-        // override name but keep shift id
-        setCurrentWorkday({ ...openShift, Name: selectedUserForAuth.Name });
-      } else {
-        // no shift is fine for senior, they just get panel and can't do measurements unless shift opens, 
-        // actually they can do inventory anytime
-      }
-      setCurrentPage('senior-tech-panel');
-    } else {
-      // Regular Tech
-      const newWorkday = await openWorkdayDB(selectedUserForAuth.Name);
-      if (newWorkday) {
-        setCurrentWorkday(newWorkday);
-        setCurrentPage('workday');
-      }
+
+      setSelectedUserForAuth(null);
+    } finally {
+      setIsAuthenticating(false);
     }
-
-    setSelectedUserForAuth(null);
   };
 
   const handleUnlockShiftSubmit = () => {
@@ -1190,9 +1201,12 @@ const handleSendChecklist = async () => {
               <div className="flex gap-3">
                 <button
                   onClick={handleAuthSubmit}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-3.5 rounded-lg transition-colors shadow-sm active:scale-95"
+                  disabled={isAuthenticating}
+                  className={`flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-3.5 rounded-lg transition-colors shadow-sm active:scale-95 ${
+                    isAuthenticating ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Войти
+                  {isAuthenticating ? 'Вход...' : 'Войти'}
                 </button>
               </div>
             </div>

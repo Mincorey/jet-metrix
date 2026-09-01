@@ -14,6 +14,7 @@ export default function InitialSetup({ onSetupComplete }: InitialSetupProps) {
 
   const handleSetup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
 
     // Валидация логина (только буквы и пробелы)
     const loginRegex = /^[A-Za-zА-Яа-яЁё\s.\-]+$/;

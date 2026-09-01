@@ -31,6 +31,7 @@ export default function AppSettings({ onBack }: AppSettingsProps) {
     };
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (uploading) return;
         const file = event.target.files?.[0];
         if (!file) return;
 
@@ -80,6 +81,7 @@ export default function AppSettings({ onBack }: AppSettingsProps) {
     };
 
     const handleSaveTexts = async () => {
+        if (savingTexts) return;
         setSavingTexts(true);
         try {
             const response = await fetch('/api/settings/texts', {

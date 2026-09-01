@@ -77,7 +77,9 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
   }, [step, fromTank]);
 
   const handleSave = async () => {
-    if (!counterBefore || !counterAfter || !density || !temperature) {
+    if (isSaving) return;
+
+    if (!fromTank || !toTank || !counterBefore.trim() || !counterAfter.trim() || !density.trim() || !temperature.trim()) {
       showToast('Заполните все поля!', 'error');
       return;
     }
@@ -99,57 +101,57 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
 
     const volume = parseFloat((after - before).toFixed(2));
 
-    // Проверка лимитов для обоих резервуаров (исходный и целевой)
-    const parkMap = await fetchParkStateMap();
-    const fromCurVol = parkMap[fromTank!] ?? 0;
-    const toCurVol = parkMap[toTank!] ?? 0;
-
-    // 1. Проверка исходного резервуара на незабираемый остаток
-    const fromValidation = validateTankOperation({
-      tankName: fromTank!,
-      currentVolume: fromCurVol,
-      deltaVolume: -volume,
-      operationTypeLabel: 'Перекачка (исходный резервуар)',
-    });
-    if (!fromValidation.isValid) {
-      setValidationError(fromValidation);
-      return;
-    }
-
-    // 2. Проверка целевого резервуара на переполнение
-    const toValidation = validateTankOperation({
-      tankName: toTank!,
-      currentVolume: toCurVol,
-      deltaVolume: volume,
-      operationTypeLabel: 'Перекачка (целевой резервуар)',
-    });
-    if (!toValidation.isValid) {
-      setValidationError(toValidation);
-      return;
-    }
-
-    const mass = parseFloat((volume * dens).toFixed(2));
-    const dateStr = new Date().toLocaleString('ru-RU', { 
-      day: '2-digit', month: '2-digit', year: 'numeric', 
-      hour: '2-digit', minute: '2-digit' 
-    }).replace(',', '');
-
-    const payload = {
-      Workday_ID: currentWorkday?.id || null,
-      Date: dateStr,
-      Name: currentUser.Name,
-      From_Tank: fromTank!,
-      To_Tank: toTank!,
-      Counter_Before: before,
-      Counter_After: after,
-      Density: dens,
-      Temperature: temp,
-      Volume: volume,
-      Mass: mass
-    };
-
     setIsSaving(true);
+    let payload: any = null;
     try {
+      // Проверка лимитов для обоих резервуаров (исходный и целевой)
+      const parkMap = await fetchParkStateMap();
+      const fromCurVol = parkMap[fromTank!] ?? 0;
+      const toCurVol = parkMap[toTank!] ?? 0;
+
+      // 1. Проверка исходного резервуара на незабираемый остаток
+      const fromValidation = validateTankOperation({
+        tankName: fromTank!,
+        currentVolume: fromCurVol,
+        deltaVolume: -volume,
+        operationTypeLabel: 'Перекачка (исходный резервуар)',
+      });
+      if (!fromValidation.isValid) {
+        setValidationError(fromValidation);
+        return;
+      }
+
+      // 2. Проверка целевого резервуара на переполнение
+      const toValidation = validateTankOperation({
+        tankName: toTank!,
+        currentVolume: toCurVol,
+        deltaVolume: volume,
+        operationTypeLabel: 'Перекачка (целевой резервуар)',
+      });
+      if (!toValidation.isValid) {
+        setValidationError(toValidation);
+        return;
+      }
+
+      const mass = parseFloat((volume * dens).toFixed(2));
+      const dateStr = new Date().toLocaleString('ru-RU', { 
+        day: '2-digit', month: '2-digit', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit' 
+      }).replace(',', '');
+
+      payload = {
+        Workday_ID: currentWorkday?.id || null,
+        Date: dateStr,
+        Name: currentUser.Name,
+        From_Tank: fromTank!,
+        To_Tank: toTank!,
+        Counter_Before: before,
+        Counter_After: after,
+        Density: dens,
+        Temperature: temp,
+        Volume: volume,
+        Mass: mass
+      };
       let savedSuccessfully = false;
       if (navigator.onLine) {
         const res = await fetch('/api/in-warehouse', {

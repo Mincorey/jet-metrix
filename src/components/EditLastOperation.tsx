@@ -157,6 +157,7 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
     if (!selectedOp) return;
     if (!isShiftOpen) {
       return showToast('Нельзя редактировать операции: смена уже закрыта', 'error');
@@ -204,8 +205,10 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
       formData.Average_Level = avg;
     }
 
-    // Проверка пределов наполнения и незабираемого остатка
-    const parkMap = await fetchParkStateMap();
+    setIsSaving(true);
+    try {
+      // Проверка пределов наполнения и незабираемого остатка
+      const parkMap = await fetchParkStateMap();
 
     if (['reception', 'reception_auto'].includes(selectedOp.operationType)) {
       const tankName = formData.Tank_Name || selectedOp.Tank_Name;
@@ -294,29 +297,28 @@ export default function EditLastOperation({ workdayId, onClose }: EditLastOpProp
     const payload = { operationType: selectedOp.operationType, id: selectedOp.id, data: { ...formData, Volume: newVol, Mass: newMass } };
     delete payload.data.operationType;
 
-    setIsSaving(true);
-    try {
-      const res = await fetch('/api/operations/edit-last', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        showToast('Операция обновлена!', 'success');
-        await fetchOperations();
-        handleBackToList();
-      } else {
-        showToast(data.message || data.error || 'Ошибка сохранения', 'error');
-      }
-    } catch (e) {
-      showToast('Ошибка сети', 'error');
-    } finally {
-      setIsSaving(false);
+    const res = await fetch('/api/operations/edit-last', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('Операция обновлена!', 'success');
+      await fetchOperations();
+      handleBackToList();
+    } else {
+      showToast(data.message || data.error || 'Ошибка сохранения', 'error');
     }
-  };
+  } catch (e) {
+    showToast('Ошибка сети', 'error');
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   const handleDelete = async () => {
+    if (isSaving) return;
     if (!selectedOp) return;
     if (!isShiftOpen) {
       return showToast('Нельзя удалять операции: смена уже закрыта', 'error');

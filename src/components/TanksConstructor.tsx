@@ -99,6 +99,7 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
     };
 
     const handleSave = async () => {
+        if (isSaving) return;
         if (!newName.trim() || calibrationData.length === 0) {
             showToast("Введите имя и загрузите таблицу!", "error");
             return;
@@ -132,6 +133,7 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
     };
 
     const handleSaveTechLine = async () => {
+        if (isSaving) return;
         if (!techName.trim() || !techVolume.trim()) {
             showToast("Заполните все поля!", "error");
             return;
@@ -175,6 +177,7 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
     };
 
     const handleDeleteTechLine = async () => {
+        if (isSaving) return;
         if (!techLineToDelete) return;
         setIsSaving(true);
         try {
@@ -202,6 +205,7 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
     };
 
     const handleToggleStatus = async (id: number, currentStatus: string) => {
+        if (isSaving) return;
         const newStatus = currentStatus === 'active' ? 'archived' : 'active';
         setIsSaving(true);
         try {
@@ -224,6 +228,7 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
     };
 
     const executeClearAll = async () => {
+        if (isSaving) return;
         setIsSaving(true);
         try {
             const response = await fetch('/api/tanks/all', { method: 'DELETE' });

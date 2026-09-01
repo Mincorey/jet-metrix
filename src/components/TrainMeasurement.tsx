@@ -61,6 +61,8 @@ export default function TrainMeasurement({ currentWorkday, onBack }: TrainMeasur
   }, []);
 
   const handleCalculateAndSave = async () => {
+    if (isSaving) return;
+
     if (!trainNumber.trim() || !l1.trim() || !l2.trim() || !l3.trim() || !density.trim() || !temp.trim()) {
       showToast('Заполните все поля!', 'error');
       return;

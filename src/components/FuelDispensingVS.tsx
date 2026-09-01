@@ -60,6 +60,8 @@ export default function FuelDispensingVS({ currentWorkday, onBack }: FuelDispens
   };
 
   const handleCalculateAndSave = async () => {
+    if (isSaving) return;
+
     if (!controlNumber.trim() || !passportNumber.trim() || !passportDate.trim() || !densityStr.trim() || !volumeStr.trim()) {
       showToast('Заполните все поля!', 'error');
       return;
