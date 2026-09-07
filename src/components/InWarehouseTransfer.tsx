@@ -9,6 +9,7 @@ import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
 import { validateTankOperation, fetchParkStateMap, TankValidationResult } from '../utils/tankLimits';
 import TankLimitErrorModal from './TankLimitErrorModal';
+import { getTankButtonClasses } from '../utils/tankColors';
 
 interface InWarehouseTransferProps {
   currentUser: { Name: string };
@@ -270,7 +271,7 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
               <button
                 key={t.id}
                 onClick={() => { setFromTank(t.Name); setStep(2); }}
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-5 rounded-2xl text-lg font-bold shadow-sm active:scale-95 transition-all text-slate-800 dark:text-slate-200"
+                className={`w-full py-5 px-3 rounded-2xl text-lg font-bold shadow-sm active:scale-95 transition-all ${getTankButtonClasses(t.Name)}`}
               >
                 {t.Name}
               </button>
@@ -295,7 +296,7 @@ export default function InWarehouseTransfer({ currentUser, currentWorkday, onBac
               <button
                 key={t.id}
                 onClick={() => { setToTank(t.Name); setStep(3); }}
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-5 rounded-2xl text-lg font-bold shadow-sm active:scale-95 transition-all text-slate-800 dark:text-slate-200"
+                className={`w-full py-5 px-3 rounded-2xl text-lg font-bold shadow-sm active:scale-95 transition-all ${getTankButtonClasses(t.Name)}`}
               >
                 {t.Name}
               </button>

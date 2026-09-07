@@ -10,6 +10,7 @@ import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
 import { validateTankOperation, getTankCurrentVolume, TankValidationResult } from '../utils/tankLimits';
 import TankLimitErrorModal from './TankLimitErrorModal';
+import { getTankButtonClasses } from '../utils/tankColors';
 
 // Import tables (assuming they are used elsewhere or just kept)
 interface FuelDispensingTZAProps {
@@ -345,7 +346,7 @@ export default function FuelDispensingTZA({ currentWorkday, onBack }: FuelDispen
                 <button
                   key={tank.id}
                   onClick={() => handleTankClick(tank.Name)}
-                  className="w-full py-5 px-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl text-lg font-bold transition-all shadow-sm active:scale-95"
+                  className={`w-full py-5 px-3 rounded-2xl text-lg font-bold transition-all shadow-sm active:scale-95 ${getTankButtonClasses(tank.Name)}`}
                 >
                   {tank.Name}
                 </button>

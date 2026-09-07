@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
 import { getVolumeFromCalibration } from '../utils/calibrationHelper';
+import { getTankButtonClasses } from '../utils/tankColors';
 
 // Константы больше не нужны, так как трубопроводы теперь - Тех. Линии в БД
 
@@ -360,13 +361,10 @@ export default function InventoryTanks({ currentWorkday, onBack }: InventoryTank
               <button
                 key={tank.id}
                 onClick={() => handleTankClick(tank.Name)}
-                className={`py-5 px-3 rounded-2xl text-lg font-bold transition-all shadow-sm active:scale-95 text-center ${isMeasured
-                  ? 'bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
-                  : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
-                  }`}
+                className={`w-full py-5 px-3 rounded-2xl text-lg font-bold transition-all shadow-sm active:scale-95 text-center ${getTankButtonClasses(tank.Name, false, isMeasured)}`}
               >
                 {tank.Name}
-                {isMeasured && <span className="block text-xs mt-1 opacity-80">(Измерен)</span>}
+                {isMeasured && <span className="block text-xs mt-1 font-semibold text-emerald-600 dark:text-emerald-400 opacity-90">(Измерен)</span>}
               </button>
             );
           })}

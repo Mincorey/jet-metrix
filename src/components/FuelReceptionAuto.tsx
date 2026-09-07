@@ -8,6 +8,7 @@ import { saveToQueue } from '../utils/offlineQueue';
 import { normalizeDensity } from '../utils/densityHelper';
 import { validateTankOperation, getTankCurrentVolume, TankValidationResult } from '../utils/tankLimits';
 import TankLimitErrorModal from './TankLimitErrorModal';
+import { getTankButtonClasses } from '../utils/tankColors';
 
 interface FuelReceptionAutoProps {
   currentWorkday: WorkdayRecord;
@@ -281,7 +282,7 @@ export default function FuelReceptionAuto({ currentWorkday, onBack }: FuelRecept
                 <button
                   key={tank.id}
                   onClick={() => handleTankClick(tank.Name)}
-                  className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 py-5 rounded-2xl text-lg font-bold shadow-sm active:scale-95 transition-all"
+                  className={`w-full py-5 px-3 rounded-2xl text-lg font-bold shadow-sm active:scale-95 transition-all ${getTankButtonClasses(tank.Name)}`}
                 >
                   {tank.Name}
                 </button>

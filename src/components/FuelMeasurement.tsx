@@ -11,6 +11,7 @@ import { normalizeDensity } from '../utils/densityHelper';
 import { getVolumeFromCalibration } from '../utils/calibrationHelper';
 import { getTankLimits, TankValidationResult } from '../utils/tankLimits';
 import TankLimitErrorModal from './TankLimitErrorModal';
+import { getTankButtonClasses } from '../utils/tankColors';
 
 interface FuelMeasurementProps {
   currentWorkday: WorkdayRecord;
@@ -324,10 +325,7 @@ export default function FuelMeasurement({ currentWorkday, onBack }: FuelMeasurem
               key={tank.id}
               type="button"
               onClick={() => handleTankClick(tank.Name)}
-              className={`w-full py-5 px-3 rounded-2xl text-lg font-bold transition-all shadow-sm active:scale-95 ${selectedTank === tank.Name
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'
-                }`}
+              className={`w-full py-5 px-3 rounded-2xl text-lg font-bold transition-all shadow-sm active:scale-95 ${getTankButtonClasses(tank.Name, selectedTank === tank.Name)}`}
             >
               {tank.Name}
             </button>
