@@ -19,6 +19,7 @@ import handler_14 from './_handlers/fuel-reception.js';
 import handler_15 from './_handlers/in-warehouse.js';
 import handler_16 from './_handlers/inventory.js';
 import handler_17 from './_handlers/operations/edit-last.js';
+import handler_by_dates from './_handlers/operations/by-dates.js';
 import handler_18 from './_handlers/operations/last/[workdayId].js';
 import handler_19 from './_handlers/park-state.js';
 import handler_20 from './_handlers/send-checklist.js';
@@ -107,6 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (route === 'fuel-reception') return await handler_14(req, res);
     if (route === 'in-warehouse') return await handler_15(req, res);
     if (route === 'inventory') return await handler_16(req, res);
+    if (route === 'operations/by-dates') return await handler_by_dates(req, res);
     if (route === 'operations/edit-last') return await handler_17(req, res);
     
     // operations/last/[workdayId]

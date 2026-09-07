@@ -65,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     try {
-      const { operationType, id, data, action } = req.body
+      const { operationType, id, data, action, isAdmin } = req.body
       const table = TABLE_MAP[operationType]
       if (!table) return sendError(res, 400, 'Неизвестный тип операции')
 
@@ -73,8 +73,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: oldRecord } = await supabase.from(table).select('*').eq('id', id).single()
       if (!oldRecord) return sendError(res, 404, 'Операция не найдена')
 
-      // Verify that the associated workday is currently Open
-      if (oldRecord.Workday_ID) {
+      // Verify that the associated workday is currently Open (unless modified by Administrator)
+      if (oldRecord.Workday_ID && !isAdmin) {
         const { data: workday, error: wdError } = await supabase
           .from('Workdays')
           .select('Workday_Status')
@@ -159,7 +159,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (oldDataStr && newDataStr) {
-          const msg = `⚠️ <b>ВНИМАНИЕ: ИЗМЕНЕНИЕ ОПЕРАЦИИ!</b>\n✏️ <b>${opName}</b>\n\n👤 <b>Исполнитель (Смена):</b> ${employeeName}\n🕒 <b>Время изменения:</b> ${opDate}\n\n${identifierStr}\n📝 <b>БЫЛО:</b>\n${oldDataStr}\n✅ <b>СТАЛО:</b>\n${newDataStr}`;
+          const header = isAdmin
+            ? `🛠 <b>ВНИМАНИЕ: ОПЕРАЦИЯ СКОРРЕКТИРОВАНА АДМИНИСТРАТОРОМ!</b>\n✏️ <b>${opName}</b> (Смена №${oldRecord.Workday_ID || '—'})`
+            : `⚠️ <b>ВНИМАНИЕ: ИЗМЕНЕНИЕ ОПЕРАЦИИ!</b>\n✏️ <b>${opName}</b>`;
+          const msg = `${header}\n\n👤 <b>Исполнитель смены:</b> ${employeeName}\n📅 <b>Дата операции:</b> ${oldRecord.Date || '—'}\n🕒 <b>Время изменения:</b> ${opDate}\n\n${identifierStr}📝 <b>БЫЛО:</b>\n${oldDataStr}\n✅ <b>СТАЛО:</b>\n${newDataStr}`;
           await sendTelegramNotification(msg);
         }
 

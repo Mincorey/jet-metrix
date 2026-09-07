@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, ShieldAlert, Trash2, Pencil, ChevronUp, ChevronDown, Download, Plus, Activity, AlertTriangle } from 'lucide-react';
+import { X, UserPlus, ShieldAlert, Trash2, Pencil, ChevronUp, ChevronDown, Download, Plus, Activity, AlertTriangle, FileEdit } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { Employee } from '../data/Employees';
 import * as XLSX from 'xlsx';
+import AdminCorrection from './AdminCorrection';
 
 interface TZA {
     id: number;
@@ -25,6 +26,7 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [adminView, setAdminView] = useState<'menu' | 'correction'>('menu');
 
     // Modal states
     const [showAddModal, setShowAddModal] = useState(false);
@@ -392,6 +394,10 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
         }
     };
 
+    if (adminView === 'correction') {
+        return <AdminCorrection onBack={() => setAdminView('menu')} />;
+    }
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex flex-col items-center pt-16 pb-20 px-4 font-sans transition-colors duration-200">
             <div className="w-full max-w-md flex flex-col items-center">
@@ -414,6 +420,13 @@ export default function AdminPanel({ onBack, onNavigateToTanks, onNavigateToSett
                         className="w-full mt-4 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-lg font-bold py-5 px-10 rounded-2xl transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
                     >
                         Настройки приложения
+                    </button>
+                    <button
+                        onClick={() => setAdminView('correction')}
+                        className="w-full mt-4 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-lg font-bold py-5 px-10 rounded-2xl transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        <FileEdit className="w-5 h-5 text-indigo-500" />
+                        Корректировка
                     </button>
                     <button
                         onClick={onNavigateToTelegramSettings}
