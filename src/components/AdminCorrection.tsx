@@ -1,9 +1,112 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Calendar as CalendarIcon, Search, Filter, Pencil, AlertTriangle, Check, X, RefreshCw, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { ArrowLeft, Calendar as CalendarIcon, Search, Filter, Pencil, AlertTriangle, Check, X, RefreshCw, ChevronRight, ChevronDown, User, Layers } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { ru } from 'date-fns/locale';
 import { useToast } from '../context/ToastContext';
 import { getVolumeFromCalibration } from '../utils/calibrationHelper';
+
+interface DropdownOption {
+  value: string;
+  label: string;
+  count?: number;
+}
+
+interface CustomDropdownProps {
+  value: string;
+  options: DropdownOption[];
+  onChange: (value: string) => void;
+  icon?: React.ReactNode;
+  placeholder?: string;
+}
+
+function CustomDropdown({ value, options, onChange, icon, placeholder }: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const selectedOption = options.find((o) => o.value === value) || options[0];
+  const isFiltered = value !== 'all';
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs sm:text-sm font-medium transition-all shadow-sm outline-none cursor-pointer select-none ${
+          isOpen
+            ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-white dark:bg-slate-800 text-slate-900 dark:text-white'
+            : isFiltered
+            ? 'border-indigo-500/60 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-semibold'
+            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
+        }`}
+      >
+        <div className="flex items-center gap-2 min-w-0 truncate">
+          {icon && <span className="shrink-0">{icon}</span>}
+          <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+        </div>
+        <ChevronDown
+          className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-indigo-500' : ''
+          }`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-xl shadow-slate-900/15 dark:shadow-black/60 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="p-1.5 max-h-56 overflow-y-auto space-y-1 scrollbar-custom">
+            {options.map((opt) => {
+              const isSelected = opt.value === value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm transition-all text-left cursor-pointer ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white font-bold shadow-sm'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/70 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span className="truncate">{opt.label}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {opt.count !== undefined && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
+                          isSelected
+                            ? 'bg-indigo-700/70 text-indigo-100'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {opt.count}
+                      </span>
+                    )}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface AdminCorrectionProps {
   onBack: () => void;
@@ -140,6 +243,29 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
     const ops = Array.from(new Set(operations.map(op => op.Name).filter(Boolean)));
     return ops.sort((a, b) => String(a).localeCompare(String(b)));
   }, [operations]);
+
+  // Опции для красивых выпадающих списков
+  const shiftOptions = useMemo(() => {
+    return [
+      { value: 'all', label: 'Все смены', count: operations.length },
+      ...uniqueShifts.map(s => ({
+        value: String(s),
+        label: `Смена №${s}`,
+        count: operations.filter(op => String(op.Workday_ID) === String(s)).length
+      }))
+    ];
+  }, [operations, uniqueShifts]);
+
+  const operatorOptions = useMemo(() => {
+    return [
+      { value: 'all', label: 'Все сотрудники', count: operations.length },
+      ...uniqueOperators.map(o => ({
+        value: String(o),
+        label: String(o),
+        count: operations.filter(op => op.Name === o).length
+      }))
+    ];
+  }, [operations, uniqueOperators]);
 
   // Фильтрация операций
   const filteredOperations = useMemo(() => {
@@ -467,7 +593,7 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
             </div>
 
             {/* Поиск и Фильтры */}
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3 mb-6 relative z-30">
               <div className="relative">
                 <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
@@ -481,30 +607,20 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
 
               {/* Селекторы Смены и Оператора */}
               <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <select
-                    value={selectedShift}
-                    onChange={(e) => setSelectedShift(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="all">Все смены</option>
-                    {uniqueShifts.map(s => (
-                      <option key={s} value={s}>Смена №{s}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <select
-                    value={selectedOperator}
-                    onChange={(e) => setSelectedOperator(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 truncate"
-                  >
-                    <option value="all">Все сотрудники</option>
-                    {uniqueOperators.map(o => (
-                      <option key={o} value={o}>{o}</option>
-                    ))}
-                  </select>
-                </div>
+                <CustomDropdown
+                  value={selectedShift}
+                  onChange={setSelectedShift}
+                  options={shiftOptions}
+                  icon={<Layers className="w-4 h-4 text-indigo-500" />}
+                  placeholder="Все смены"
+                />
+                <CustomDropdown
+                  value={selectedOperator}
+                  onChange={setSelectedOperator}
+                  options={operatorOptions}
+                  icon={<User className="w-4 h-4 text-indigo-500" />}
+                  placeholder="Все сотрудники"
+                />
               </div>
 
               {/* Быстрые фильтры по типу операции */}
