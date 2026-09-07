@@ -649,10 +649,10 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
                       Счетчик ДО (л)
                     </label>
                     <input
-                      type="number"
-                      step="any"
+                      type="text"
+                      inputMode="decimal"
                       value={formData.Counter_Before ?? ''}
-                      onChange={(e) => handleFieldChange('Counter_Before', e.target.value)}
+                      onChange={(e) => handleFieldChange('Counter_Before', e.target.value.replace(/[^0-9.,]/g, ''))}
                       className="w-full bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
@@ -661,10 +661,10 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
                       Счетчик ПОСЛЕ (л)
                     </label>
                     <input
-                      type="number"
-                      step="any"
+                      type="text"
+                      inputMode="decimal"
                       value={formData.Counter_After ?? ''}
-                      onChange={(e) => handleFieldChange('Counter_After', e.target.value)}
+                      onChange={(e) => handleFieldChange('Counter_After', e.target.value.replace(/[^0-9.,]/g, ''))}
                       className="w-full bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
@@ -678,10 +678,10 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
                     Плотность (г/см³)
                   </label>
                   <input
-                    type="number"
-                    step="0.0001"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.Density ?? ''}
-                    onChange={(e) => handleFieldChange('Density', e.target.value)}
+                    onChange={(e) => handleFieldChange('Density', e.target.value.replace(/[^0-9.,]/g, ''))}
                     className="w-full bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -694,10 +694,10 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
                     Количество выданного топлива (л)
                   </label>
                   <input
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.Volume ?? ''}
-                    onChange={(e) => handleFieldChange('Volume', e.target.value)}
+                    onChange={(e) => handleFieldChange('Volume', e.target.value.replace(/[^0-9.,]/g, ''))}
                     className="w-full bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -712,9 +712,10 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
                         Замер 1 (мм)
                       </label>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={formData.Level_1 ?? ''}
-                        onChange={(e) => handleFieldChange('Level_1', e.target.value)}
+                        onChange={(e) => handleFieldChange('Level_1', e.target.value.replace(/[^0-9]/g, ''))}
                         className="w-full bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-2.5 py-2 font-mono text-sm text-center text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
@@ -723,9 +724,10 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
                         Замер 2 (мм)
                       </label>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={formData.Level_2 ?? ''}
-                        onChange={(e) => handleFieldChange('Level_2', e.target.value)}
+                        onChange={(e) => handleFieldChange('Level_2', e.target.value.replace(/[^0-9]/g, ''))}
                         className="w-full bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-2.5 py-2 font-mono text-sm text-center text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
@@ -734,9 +736,10 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
                         Замер 3 (мм)
                       </label>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={formData.Level_3 ?? ''}
-                        onChange={(e) => handleFieldChange('Level_3', e.target.value)}
+                        onChange={(e) => handleFieldChange('Level_3', e.target.value.replace(/[^0-9]/g, ''))}
                         className="w-full bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-2.5 py-2 font-mono text-sm text-center text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
@@ -747,10 +750,10 @@ export default function AdminCorrection({ onBack }: AdminCorrectionProps) {
                       Температура (°C)
                     </label>
                     <input
-                      type="number"
-                      step="0.1"
+                      type="text"
+                      inputMode="decimal"
                       value={formData.Temperature ?? ''}
-                      onChange={(e) => handleFieldChange('Temperature', e.target.value)}
+                      onChange={(e) => handleFieldChange('Temperature', e.target.value.replace(/[^0-9.,-]/g, ''))}
                       className="w-full bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>

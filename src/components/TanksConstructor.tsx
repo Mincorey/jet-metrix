@@ -525,12 +525,11 @@ export default function TanksConstructor({ onBack }: { onBack: () => void }) {
                                         Объем (литры)
                                     </label>
                                     <input
-                                        type="number"
-                                        step="any"
+                                        type="text"
+                                        inputMode="decimal"
                                         value={techVolume}
-                                        onChange={(e) => setTechVolume(e.target.value)}
-                                        className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 font-mono [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        style={{ MozAppearance: 'textfield' }}
+                                        onChange={(e) => setTechVolume(e.target.value.replace(/[^0-9.,]/g, ''))}
+                                        className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 font-mono"
                                         placeholder="0.00"
                                     />
                                 </div>
