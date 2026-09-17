@@ -702,7 +702,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                   className={`relative flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all text-center select-none active:scale-95 ${
                     isActive
                       ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25 border border-emerald-500 font-bold'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-750 hover:border-slate-300'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300'
                   }`}
                 >
                   <span className="text-sm font-bold tracking-tight">
@@ -725,17 +725,17 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
           {/* ======================================================================== */}
           {/* НАШ МОЩНЫЙ И КРАСИВЫЙ КАЛЕНДАРЬ ДЛЯ ВЫБОРА ПРОИЗВОЛЬНОГО ПЕРИОДА */}
           {/* ======================================================================== */}
-          <div className="bg-white dark:bg-slate-850 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-750 shadow-sm transition-all">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700 shadow-sm transition-all">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <button
                 onClick={() => setIsCalendarOpen(!isCalendarOpen)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-left shadow-sm active:scale-95 flex-1 ${
                   period === 'custom'
                     ? 'bg-emerald-600 text-white shadow-emerald-600/20'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                    : 'bg-slate-100 dark:bg-slate-900/60 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
                 }`}
               >
-                <div className={`p-2 rounded-lg ${period === 'custom' ? 'bg-emerald-500/80 text-white' : 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'}`}>
+                <div className={`p-2 rounded-lg ${period === 'custom' ? 'bg-emerald-500/80 text-white' : 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'}`}>
                   <CalendarDays className="w-5 h-5" />
                 </div>
                 <div className="flex flex-col min-w-0">
@@ -778,7 +778,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                 </div>
 
                 {/* DayPicker календарь */}
-                <div className="bg-slate-50 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner flex justify-center w-full max-w-sm">
+                <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner flex justify-center w-full max-w-sm">
                   <DayPicker
                     mode="range"
                     selected={calendarRange}
@@ -796,7 +796,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                 </div>
 
                 {/* Информационная плашка выбранного диапазона и кнопка ОК */}
-                <div className="w-full max-w-sm mt-4 p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="w-full max-w-sm mt-4 p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <div className="text-xs text-slate-600 dark:text-slate-300 text-center sm:text-left">
                     {calendarRange?.from ? (
                       <div>
@@ -890,7 +890,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                   {/* ======================================================================== */}
                   {/* ГРАФИК 1: ВЫДАЧА В ЛИТРАХ */}
                   {/* ======================================================================== */}
-                  <div className="bg-white dark:bg-slate-850 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-750 shadow-md transition-all">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700 shadow-md transition-all">
                     {/* Заголовок графика 1 */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
                       <div className="flex items-center gap-2.5">
@@ -940,7 +940,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                           />
                           <XAxis
                             dataKey="name"
-                            axisLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
+                            axisLine={{ stroke: '#64748b', strokeWidth: 1, opacity: 0.3 }}
                             tickLine={processedData.showAxisTicks}
                             tick={processedData.showAxisTicks ? { fill: '#64748b', fontSize: 12, fontWeight: 500 } : false}
                             dy={10}
@@ -984,7 +984,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
 
                     {/* Поясняющая надпись шкалы / название периода */}
                     <div className="text-center mt-1">
-                      <span className="inline-block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/90 py-1.5 px-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                      <span className="inline-block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-900/60 py-1.5 px-4 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm">
                         {processedData.axisCaption}
                       </span>
                     </div>
@@ -993,8 +993,8 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                   {/* ======================================================================== */}
                   {/* ПОЯСНИТЕЛЬНЫЙ ФРЕЙМ ПОД ГРАФИКОМ 1 (ЛИТРЫ) */}
                   {/* ======================================================================== */}
-                  <div className="bg-white dark:bg-slate-850 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-750 shadow-md">
-                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 shadow-md">
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-700">
                       <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
                       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                         Сводка показателей по объему (литры)
@@ -1004,7 +1004,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                     {/* 4 карточки-показателя */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                       {/* Карточка 1: Период */}
-                      <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
+                      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
                         <div className="p-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shrink-0">
                           <Calendar className="w-5 h-5" />
                         </div>
@@ -1020,7 +1020,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                       </div>
 
                       {/* Карточка 2: Кол-во операций */}
-                      <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
+                      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
                         <div className="p-2.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 shrink-0">
                           <Plane className="w-5 h-5" />
                         </div>
@@ -1052,7 +1052,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                       </div>
 
                       {/* Карточка 4: Средняя плотность */}
-                      <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
+                      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
                         <div className="p-2.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 shrink-0">
                           <Gauge className="w-5 h-5" />
                         </div>
@@ -1080,7 +1080,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                   {/* ======================================================================== */}
                   {/* ГРАФИК 2: ВЫДАЧА В КИЛОГРАММАХ */}
                   {/* ======================================================================== */}
-                  <div className="bg-white dark:bg-slate-850 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-750 shadow-md transition-all">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700 shadow-md transition-all">
                     {/* Заголовок графика 2 */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
                       <div className="flex items-center gap-2.5">
@@ -1130,7 +1130,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                           />
                           <XAxis
                             dataKey="name"
-                            axisLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
+                            axisLine={{ stroke: '#64748b', strokeWidth: 1, opacity: 0.3 }}
                             tickLine={processedData.showAxisTicks}
                             tick={processedData.showAxisTicks ? { fill: '#64748b', fontSize: 12, fontWeight: 500 } : false}
                             dy={10}
@@ -1174,7 +1174,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
 
                     {/* Поясняющая надпись шкалы / название периода */}
                     <div className="text-center mt-1">
-                      <span className="inline-block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/90 py-1.5 px-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                      <span className="inline-block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-900/60 py-1.5 px-4 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm">
                         {processedData.axisCaption}
                       </span>
                     </div>
@@ -1183,8 +1183,8 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                   {/* ======================================================================== */}
                   {/* ПОЯСНИТЕЛЬНЫЙ ФРЕЙМ ПОД ГРАФИКОМ 2 (КИЛОГРАММЫ) */}
                   {/* ======================================================================== */}
-                  <div className="bg-white dark:bg-slate-850 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-750 shadow-md">
-                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 shadow-md">
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-700">
                       <span className="flex h-2.5 w-2.5 rounded-full bg-indigo-500" />
                       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                         Сводка показателей по массе (килограммы)
@@ -1194,7 +1194,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                     {/* 4 карточки-показателя */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                       {/* Карточка 1: Период */}
-                      <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
+                      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
                         <div className="p-2.5 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
                           <Calendar className="w-5 h-5" />
                         </div>
@@ -1210,7 +1210,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                       </div>
 
                       {/* Карточка 2: Кол-во операций */}
-                      <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
+                      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
                         <div className="p-2.5 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 shrink-0">
                           <Plane className="w-5 h-5" />
                         </div>
@@ -1242,7 +1242,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                       </div>
 
                       {/* Карточка 4: Средняя плотность */}
-                      <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
+                      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-700/80 flex items-start gap-3">
                         <div className="p-2.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 shrink-0">
                           <Gauge className="w-5 h-5" />
                         </div>

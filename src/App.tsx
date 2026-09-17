@@ -125,12 +125,16 @@ export default function App() {
     const checkSetup = async () => {
       try {
         const response = await fetch(`/api/system/setup-status`);
-        if (response.ok) {
+        const contentType = response.headers.get('content-type') || '';
+        if (response.ok && contentType.includes('application/json')) {
           const data = await response.json();
           setIsConfigured(data.isConfigured);
+          return;
         }
+        setIsConfigured(true);
       } catch (e) {
         console.error("Failed to check setup status", e);
+        setIsConfigured(true);
       }
     };
     checkSetup();
