@@ -38,9 +38,10 @@ import Dashboard from './components/Dashboard';
 import InitialSetup from './components/InitialSetup';
 import InWarehouseTransfer from './components/InWarehouseTransfer';
 import TankParkMap from './components/TankParkMap';
+import DispensingVSDynamics from './components/DispensingVSDynamics';
 import { useToast } from './context/ToastContext';
 
-type Page = 'start' | 'admin-panel' | 'app-settings' | 'telegram-settings' | 'dashboard' | 'workday' | 'fuel-measurement-tanks' | 'train-measurement' | 'fuel-reception' | 'fuel-reception-auto' | 'fuel-dispensing-tza' | 'fuel-dispensing-vs' | 'reports-menu' | 'stock-report' | 'fuel-reception-report' | 'fuel-reception-auto-report' | 'fuel-dispensing-tza-report' | 'fuel-dispensing-vs-report' | 'train-report' | 'senior-tech-panel' | 'shift-report' | 'inventory-tanks' | 'inventory-report' | 'tanks-constructor' | 'in-warehouse-transfer' | 'park-map';
+type Page = 'start' | 'admin-panel' | 'app-settings' | 'telegram-settings' | 'dashboard' | 'dispensing-vs-dynamics' | 'workday' | 'fuel-measurement-tanks' | 'train-measurement' | 'fuel-reception' | 'fuel-reception-auto' | 'fuel-dispensing-tza' | 'fuel-dispensing-vs' | 'reports-menu' | 'stock-report' | 'fuel-reception-report' | 'fuel-reception-auto-report' | 'fuel-dispensing-tza-report' | 'fuel-dispensing-vs-report' | 'train-report' | 'senior-tech-panel' | 'shift-report' | 'inventory-tanks' | 'inventory-report' | 'tanks-constructor' | 'in-warehouse-transfer' | 'park-map';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('start');
@@ -994,6 +995,14 @@ const handleSendChecklist = async () => {
     );
   }
 
+  if (currentPage === 'dispensing-vs-dynamics') {
+    return (
+      <DispensingVSDynamics
+        onBack={() => setCurrentPage('start')}
+      />
+    );
+  }
+
   if (currentPage === 'park-map') {
     return <TankParkMap onBack={() => setCurrentPage('start')} />;
   }
@@ -1106,6 +1115,14 @@ const handleSendChecklist = async () => {
             className="bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-lg font-bold py-4 px-6 rounded-xl transition-all shadow-sm active:scale-95"
           >
             Аналитика
+          </button>
+          <button
+            onClick={() => {
+                setCurrentPage('dispensing-vs-dynamics');
+            }}
+            className="bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-lg font-bold py-4 px-6 rounded-xl transition-all shadow-sm active:scale-95"
+          >
+            Динамика выдачи
           </button>
           <button
             onClick={() => {
