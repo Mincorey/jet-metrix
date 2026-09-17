@@ -10,7 +10,11 @@ import {
   RefreshCw, 
   TrendingUp, 
   AlertCircle, 
-  Info 
+  Info,
+  CalendarDays,
+  ChevronDown,
+  Check,
+  X
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -24,9 +28,13 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { domToPng } from 'modern-screenshot';
 import { createClient } from '@supabase/supabase-js';
+import { DayPicker, DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
+import 'react-day-picker/dist/style.css';
 import { FuelDispensingVSRecord } from '../data/Fuel_Dispensing_VS';
 
-type PeriodType = 'yesterday' | 'week' | 'month' | 'three_months' | 'six_months' | 'year';
+type PeriodType = 'yesterday' | 'week' | 'month' | 'three_months' | 'six_months' | 'year' | 'custom';
 
 interface PeriodFilterConfig {
   id: PeriodType;
@@ -41,6 +49,16 @@ const PERIOD_CONFIG: PeriodFilterConfig[] = [
   { id: 'three_months', label: '3 месяца', sublabel: '90 дней' },
   { id: 'six_months', label: 'Полгода', sublabel: '180 дней' },
   { id: 'year', label: 'Год', sublabel: '365 дней' },
+];
+
+const MONTH_NAMES_RU = [
+  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+];
+
+const MONTH_SHORT_RU = [
+  'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
+  'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'
 ];
 
 interface DispensingVSDynamicsProps {
@@ -79,7 +97,7 @@ const CustomLitersTooltip = ({ active, payload, label }: any) => {
         <div className="flex items-center justify-between gap-2 border-b border-slate-700/80 pb-2 mb-2.5">
           <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" />
-            {data.fullDate || data.date || label}
+            {data.fullName || data.fullDate || data.date || label}
           </span>
           {data.time && (
             <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
@@ -90,13 +108,13 @@ const CustomLitersTooltip = ({ active, payload, label }: any) => {
         <div className="space-y-1.5 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-slate-400">Объем:</span>
-            <span className="font-bold text-emerald-400 text-sm">
+            <span className="font-bold text-emerald-400 text-sm font-mono">
               {formatNumber(data.liters)} л
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-400">Масса:</span>
-            <span className="font-medium text-slate-200">
+            <span className="font-medium text-slate-200 font-mono">
               {formatNumber(data.kg)} кг
             </span>
           </div>
@@ -108,7 +126,7 @@ const CustomLitersTooltip = ({ active, payload, label }: any) => {
           </div>
           {data.count !== undefined && (
             <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px]">
-              <span className="text-slate-400">Операций:</span>
+              <span className="text-slate-400">Операций в ВС:</span>
               <span className="font-semibold text-slate-200">{data.count}</span>
             </div>
           )}
@@ -140,7 +158,7 @@ const CustomKgTooltip = ({ active, payload, label }: any) => {
         <div className="flex items-center justify-between gap-2 border-b border-slate-700/80 pb-2 mb-2.5">
           <span className="text-xs font-semibold text-indigo-400 flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" />
-            {data.fullDate || data.date || label}
+            {data.fullName || data.fullDate || data.date || label}
           </span>
           {data.time && (
             <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
@@ -151,13 +169,13 @@ const CustomKgTooltip = ({ active, payload, label }: any) => {
         <div className="space-y-1.5 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-slate-400">Масса:</span>
-            <span className="font-bold text-indigo-400 text-sm">
+            <span className="font-bold text-indigo-400 text-sm font-mono">
               {formatNumber(data.kg)} кг
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-400">Объем:</span>
-            <span className="font-medium text-slate-200">
+            <span className="font-medium text-slate-200 font-mono">
               {formatNumber(data.liters)} л
             </span>
           </div>
@@ -169,7 +187,7 @@ const CustomKgTooltip = ({ active, payload, label }: any) => {
           </div>
           {data.count !== undefined && (
             <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px]">
-              <span className="text-slate-400">Операций:</span>
+              <span className="text-slate-400">Операций в ВС:</span>
               <span className="font-semibold text-slate-200">{data.count}</span>
             </div>
           )}
@@ -198,6 +216,12 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Состояние для выбора произвольного диапазона в календаре
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarRange, setCalendarRange] = useState<DateRange | undefined>(undefined);
+  const [appliedCustomRange, setAppliedCustomRange] = useState<{ from: Date; to: Date } | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Загрузка всех данных заправок ВС
@@ -265,6 +289,26 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
     fetchData();
   }, []);
 
+  // Обработка подтверждения выбора периода в календаре
+  const handleApplyCalendarRange = () => {
+    if (!calendarRange?.from) return;
+    const from = new Date(calendarRange.from);
+    from.setHours(0, 0, 0, 0);
+    const to = calendarRange.to ? new Date(calendarRange.to) : new Date(from);
+    to.setHours(23, 59, 59, 999);
+
+    setAppliedCustomRange({ from, to });
+    setPeriod('custom');
+    setIsCalendarOpen(false);
+  };
+
+  // Сброс произвольного периода
+  const handleResetCustomRange = () => {
+    setAppliedCustomRange(null);
+    setCalendarRange(undefined);
+    setPeriod('yesterday');
+  };
+
   // Вычисление данных для выбранного периода
   const processedData = useMemo(() => {
     if (!allRecords || allRecords.length === 0) {
@@ -277,6 +321,8 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
         avgDensity: '0.0000',
         dateRangeText: '',
         periodTitle: '',
+        showAxisTicks: true,
+        axisCaption: '',
       };
     }
 
@@ -285,6 +331,10 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
     let startTs = 0;
     let endTs = now.getTime();
     let periodTitle = '';
+    let isMonthlyBuckets = false;
+    let monthBucketsCount = 0;
+    let showAxisTicks = true;
+    let axisCaption = '';
 
     if (period === 'yesterday') {
       const y = new Date(now);
@@ -295,46 +345,85 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
       ye.setHours(23, 59, 59, 999);
       endTs = ye.getTime();
       periodTitle = 'Вчера';
+      showAxisTicks = true;
+      axisCaption = 'Время проведения заправок (чч:мм)';
     } else if (period === 'week') {
       const d = new Date(now);
       d.setDate(d.getDate() - 7);
       d.setHours(0, 0, 0, 0);
       startTs = d.getTime();
       periodTitle = 'За последнюю неделю (7 дней)';
+      showAxisTicks = true;
+      axisCaption = 'Посуточная динамика за 7 дней (календарные даты)';
     } else if (period === 'month') {
       const d = new Date(now);
       d.setMonth(d.getMonth() - 1);
       d.setHours(0, 0, 0, 0);
       startTs = d.getTime();
       periodTitle = 'За последний месяц (30 дней)';
+      // Для месяца скрываем нагромождение чисел на оси X, а под шкалой выводим название периода
+      showAxisTicks = false;
+      const startStr = new Date(startTs).toLocaleDateString('ru-RU');
+      const endStr = new Date(endTs).toLocaleDateString('ru-RU');
+      axisCaption = `Период: ${startStr} — ${endStr} (суточная динамика за 30 дней)`;
     } else if (period === 'three_months') {
-      const d = new Date(now);
-      d.setMonth(d.getMonth() - 3);
-      d.setHours(0, 0, 0, 0);
-      startTs = d.getTime();
+      isMonthlyBuckets = true;
+      monthBucketsCount = 3;
       periodTitle = 'За последние 3 месяца';
+      showAxisTicks = true;
+      axisCaption = 'Помесячная динамика за 3 месяца (суммарно по месяцам)';
+      const d = new Date(now.getFullYear(), now.getMonth() - 2, 1, 0, 0, 0, 0);
+      startTs = d.getTime();
     } else if (period === 'six_months') {
-      const d = new Date(now);
-      d.setMonth(d.getMonth() - 6);
-      d.setHours(0, 0, 0, 0);
-      startTs = d.getTime();
+      isMonthlyBuckets = true;
+      monthBucketsCount = 6;
       periodTitle = 'За последние полгода (6 месяцев)';
-    } else if (period === 'year') {
-      const d = new Date(now);
-      d.setFullYear(d.getFullYear() - 1);
-      d.setHours(0, 0, 0, 0);
+      showAxisTicks = true;
+      axisCaption = 'Помесячная динамика за полгода (суммарно по 6 месяцам)';
+      const d = new Date(now.getFullYear(), now.getMonth() - 5, 1, 0, 0, 0, 0);
       startTs = d.getTime();
+    } else if (period === 'year') {
+      isMonthlyBuckets = true;
+      monthBucketsCount = 12;
       periodTitle = 'За последний год (12 месяцев)';
+      showAxisTicks = true;
+      axisCaption = 'Помесячная динамика за год (суммарно по 12 месяцам)';
+      const d = new Date(now.getFullYear(), now.getMonth() - 11, 1, 0, 0, 0, 0);
+      startTs = d.getTime();
+    } else if (period === 'custom' && appliedCustomRange) {
+      startTs = appliedCustomRange.from.getTime();
+      endTs = appliedCustomRange.to.getTime();
+      const diffDays = Math.ceil((endTs - startTs) / (1000 * 60 * 60 * 24));
+      periodTitle = `Выбранный период (${diffDays} дн.)`;
+
+      if (diffDays > 60) {
+        // Больше 60 дней: помесячная агрегация
+        isMonthlyBuckets = true;
+        const startYear = appliedCustomRange.from.getFullYear();
+        const startMonth = appliedCustomRange.from.getMonth();
+        const endYear = appliedCustomRange.to.getFullYear();
+        const endMonth = appliedCustomRange.to.getMonth();
+        monthBucketsCount = (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+        showAxisTicks = true;
+        axisCaption = `Помесячная динамика: ${format(appliedCustomRange.from, 'dd.MM.yyyy')} — ${format(appliedCustomRange.to, 'dd.MM.yyyy')}`;
+      } else if (diffDays > 14) {
+        // От 15 до 60 дней: суточные точки, скрываем нагромождение чисел на оси X
+        showAxisTicks = false;
+        axisCaption = `Период: ${format(appliedCustomRange.from, 'dd.MM.yyyy')} — ${format(appliedCustomRange.to, 'dd.MM.yyyy')} (${diffDays} дней)`;
+      } else {
+        // До 14 дней: суточные точки с красивыми подписями дат
+        showAxisTicks = true;
+        axisCaption = `Посуточная динамика: ${format(appliedCustomRange.from, 'dd.MM.yyyy')} — ${format(appliedCustomRange.to, 'dd.MM.yyyy')}`;
+      }
     }
 
-    // Фильтрация записей
+    // Фильтрация записей по временному интервалу
     let filtered = allRecords.filter((r: any) => {
       const ts = r.Timestamp || parseRuDate(r.Date);
       return ts >= startTs && ts <= endTs;
     });
 
-    // Если за календарный вчерашний день в БД нет записей, но есть более ранние записи,
-    // аккуратно берем последний день, в который выполнялись операции, чтобы график не был пустым
+    // Резервная логика для "Вчера": если вчера операций не было, берем день последней смены
     if (period === 'yesterday' && filtered.length === 0) {
       const sortedAll = [...allRecords].sort((a: any, b: any) => {
         const tsA = a.Timestamp || parseRuDate(a.Date);
@@ -346,22 +435,22 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
         if (lastRecordDate) {
           filtered = sortedAll.filter((r: any) => r.Date && r.Date.startsWith(lastRecordDate));
           periodTitle = `Последняя смена (${lastRecordDate})`;
+          axisCaption = `Время проведения заправок за ${lastRecordDate} (чч:мм)`;
         }
       }
     }
 
-    // Сортируем записи хронологически от старых к новым для графиков
+    // Сортируем записи хронологически
     filtered.sort((a: any, b: any) => {
       const tsA = a.Timestamp || parseRuDate(a.Date);
       const tsB = b.Timestamp || parseRuDate(b.Date);
       return tsA - tsB;
     });
 
-    // Сводные метрики
+    // Сводные показатели
     const totalLiters = filtered.reduce((sum, r) => sum + (Number(r.Volume) || 0), 0);
     const totalKg = filtered.reduce((sum, r) => sum + (Number(r.Mass) || 0), 0);
     const operationsCount = filtered.length;
-    // Физическая средневзвешенная плотность партий = масса (кг) / объем (л)
     const avgDensity = totalLiters > 0 ? (totalKg / totalLiters).toFixed(4) : '0.0000';
 
     // Формирование текстового диапазона дат
@@ -380,11 +469,64 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
       dateRangeText = `${startDateStr} — ${endDateStr}`;
     }
 
-    // Подготовка точек графиков
+    // Подготовка точек графика
     let chartData: any[] = [];
 
-    if (period === 'yesterday') {
-      // Для периода "Вчера" показываем каждую отдельную операцию хронологически по времени
+    if (isMonthlyBuckets) {
+      // ======================================================================
+      // АГРЕГАЦИЯ ПО МЕСЯЦАМ (3 точки для 3 мес., 6 точек для 6 мес., 12 для года)
+      // ======================================================================
+      const buckets: any[] = [];
+      const anchorDate = (period === 'custom' && appliedCustomRange) ? appliedCustomRange.to : now;
+
+      for (let i = monthBucketsCount - 1; i >= 0; i--) {
+        const d = new Date(anchorDate.getFullYear(), anchorDate.getMonth() - i, 1);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        const bStartTs = new Date(y, m, 1, 0, 0, 0, 0).getTime();
+        const bEndTs = new Date(y, m + 1, 0, 23, 59, 59, 999).getTime();
+
+        // Если это 3 месяца - выводим полное название месяца ('Июль', 'Август', 'Сентябрь')
+        // Если полгода или год - выводим сокращение ('Июл', 'Авг', 'Сен')
+        const tickName = monthBucketsCount <= 3 ? MONTH_NAMES_RU[m] : MONTH_SHORT_RU[m];
+
+        buckets.push({
+          name: tickName,
+          fullName: `${MONTH_NAMES_RU[m]} ${y}`,
+          date: `${MONTH_NAMES_RU[m]} ${y}`,
+          startTs: bStartTs,
+          endTs: bEndTs,
+          liters: 0,
+          kg: 0,
+          count: 0,
+        });
+      }
+
+      filtered.forEach((r: any) => {
+        const ts = r.Timestamp || parseRuDate(r.Date);
+        buckets.forEach((b) => {
+          if (ts >= b.startTs && ts <= b.endTs) {
+            b.liters += Number(r.Volume) || 0;
+            b.kg += Number(r.Mass) || 0;
+            b.count += 1;
+          }
+        });
+      });
+
+      chartData = buckets.map((b) => ({
+        name: b.name,
+        fullName: b.fullName,
+        date: b.fullName,
+        liters: b.liters,
+        kg: b.kg,
+        count: b.count,
+        density: b.liters > 0 ? Number((b.kg / b.liters).toFixed(4)) : 0,
+      }));
+
+    } else if (period === 'yesterday') {
+      // ======================================================================
+      // ДЛЯ ВЧЕРА: каждая заправка ВС отдельной точкой по времени суток (чч:мм)
+      // ======================================================================
       chartData = filtered.map((r: any, idx: number) => {
         const timePart = r.Date && r.Date.includes(' ') ? r.Date.split(' ')[1] : `№${idx + 1}`;
         return {
@@ -400,8 +542,11 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
           operator: r.Name || '',
         };
       });
+
     } else {
-      // Для остальных периодов группируем по дням
+      // ======================================================================
+      // ДЛЯ НЕДЕЛИ, МЕСЯЦА И КОРОТКИХ ДИАПАЗОНОВ: посуточная группировка
+      // ======================================================================
       const dayMap: Record<string, {
         date: string;
         shortDate: string;
@@ -436,6 +581,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
         .map((item) => ({
           name: item.shortDate,
           date: item.date,
+          fullDate: item.date,
           liters: item.liters,
           kg: item.kg,
           count: item.count,
@@ -452,8 +598,10 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
       avgDensity,
       dateRangeText,
       periodTitle,
+      showAxisTicks,
+      axisCaption,
     };
-  }, [allRecords, period]);
+  }, [allRecords, period, appliedCustomRange]);
 
   // Скриншот страницы
   const handleDownloadScreenshot = async () => {
@@ -529,20 +677,31 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
         </div>
 
         {/* Кнопки-фильтры периодов */}
-        <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Временной период
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Быстрые периоды
+            </div>
+            {period === 'custom' && (
+              <span className="text-xs bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold px-2.5 py-0.5 rounded-full">
+                Активен период из календаря
+              </span>
+            )}
           </div>
+
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2.5">
             {PERIOD_CONFIG.map((p) => {
               const isActive = period === p.id;
               return (
                 <button
                   key={p.id}
-                  onClick={() => setPeriod(p.id)}
+                  onClick={() => {
+                    setAppliedCustomRange(null);
+                    setPeriod(p.id);
+                  }}
                   className={`relative flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all text-center select-none active:scale-95 ${
                     isActive
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25 border border-emerald-500'
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25 border border-emerald-500 font-bold'
                       : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-750 hover:border-slate-300'
                   }`}
                 >
@@ -561,6 +720,119 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                 </button>
               );
             })}
+          </div>
+
+          {/* ======================================================================== */}
+          {/* НАШ МОЩНЫЙ И КРАСИВЫЙ КАЛЕНДАРЬ ДЛЯ ВЫБОРА ПРОИЗВОЛЬНОГО ПЕРИОДА */}
+          {/* ======================================================================== */}
+          <div className="bg-white dark:bg-slate-850 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-750 shadow-sm transition-all">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <button
+                onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-left shadow-sm active:scale-95 flex-1 ${
+                  period === 'custom'
+                    ? 'bg-emerald-600 text-white shadow-emerald-600/20'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${period === 'custom' ? 'bg-emerald-500/80 text-white' : 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'}`}>
+                  <CalendarDays className="w-5 h-5" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-bold text-sm sm:text-base leading-snug">
+                    {period === 'custom' && appliedCustomRange
+                      ? `Период: ${format(appliedCustomRange.from, 'dd.MM.yyyy')} — ${format(appliedCustomRange.to, 'dd.MM.yyyy')}`
+                      : 'Выбрать произвольный период в календаре'}
+                  </span>
+                  <span className={`text-xs ${period === 'custom' ? 'text-emerald-100' : 'text-slate-500 dark:text-slate-400'}`}>
+                    {isCalendarOpen ? 'Нажмите, чтобы свернуть календарь' : 'Укажите дату начала и окончания в календаре'}
+                  </span>
+                </div>
+                <ChevronDown className={`w-5 h-5 ml-auto shrink-0 transition-transform duration-200 ${isCalendarOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {period === 'custom' && (
+                <button
+                  onClick={handleResetCustomRange}
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-medium px-3 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors self-end sm:self-auto border border-transparent hover:border-rose-200"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Сбросить выбор</span>
+                </button>
+              )}
+            </div>
+
+            {/* Раскрывающаяся панель календаря */}
+            {isCalendarOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="mt-4 pt-5 border-t border-slate-100 dark:border-slate-800 flex flex-col items-center"
+              >
+                <div className="text-center mb-3">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    Нажмите на дату начала, затем на дату окончания периода:
+                  </p>
+                </div>
+
+                {/* DayPicker календарь */}
+                <div className="bg-slate-50 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner flex justify-center w-full max-w-sm">
+                  <DayPicker
+                    mode="range"
+                    selected={calendarRange}
+                    onSelect={setCalendarRange}
+                    locale={ru}
+                    modifiersClassNames={{
+                      selected: 'bg-emerald-600 text-white font-bold',
+                      range_start: 'bg-emerald-600 text-white rounded-l-full font-bold',
+                      range_end: 'bg-emerald-600 text-white rounded-r-full font-bold',
+                      range_middle: 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200',
+                      today: 'font-extrabold text-emerald-600 dark:text-emerald-400'
+                    }}
+                    className="font-sans text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+
+                {/* Информационная плашка выбранного диапазона и кнопка ОК */}
+                <div className="w-full max-w-sm mt-4 p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="text-xs text-slate-600 dark:text-slate-300 text-center sm:text-left">
+                    {calendarRange?.from ? (
+                      <div>
+                        <span className="text-slate-400">Период: </span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                          {format(calendarRange.from, 'dd.MM.yyyy')}
+                        </span>
+                        {' — '}
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                          {calendarRange.to ? format(calendarRange.to, 'dd.MM.yyyy') : format(calendarRange.from, 'dd.MM.yyyy')}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 italic">Выберите даты в календаре</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={handleApplyCalendarRange}
+                      disabled={!calendarRange?.from}
+                      className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-md transition-all active:scale-95 disabled:cursor-not-allowed text-xs sm:text-sm"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>ОК</span>
+                    </button>
+                    <button
+                      onClick={() => setIsCalendarOpen(false)}
+                      className="px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      Закрыть
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
 
@@ -595,7 +867,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
         {!loading && !error && (
           <AnimatePresence mode="wait">
             <motion.div
-              key={period}
+              key={`${period}-${appliedCustomRange ? appliedCustomRange.from.getTime() : ''}`}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
@@ -632,6 +904,8 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                           <p className="text-xs text-slate-500 dark:text-slate-400">
                             {period === 'yesterday' 
                               ? 'Объем каждой заправки ВС по времени суток' 
+                              : period === 'three_months' || period === 'six_months' || period === 'year'
+                              ? 'Суммарный помесячный объем выданного топлива'
                               : 'Суммарный суточный объем выданного топлива'}
                           </p>
                         </div>
@@ -667,10 +941,9 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                           <XAxis
                             dataKey="name"
                             axisLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
-                            tickLine={false}
-                            tick={{ fill: '#64748b', fontSize: 11 }}
+                            tickLine={processedData.showAxisTicks}
+                            tick={processedData.showAxisTicks ? { fill: '#64748b', fontSize: 12, fontWeight: 500 } : false}
                             dy={10}
-                            interval={period === 'three_months' || period === 'six_months' || period === 'year' ? 'preserveStartEnd' : 0}
                           />
                           <YAxis
                             axisLine={false}
@@ -693,13 +966,13 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                             animationDuration={1300}
                             animationEasing="ease-out"
                             dot={{
-                              r: period === 'yesterday' ? 5 : 3.5,
+                              r: period === 'three_months' || period === 'six_months' ? 6 : 4,
                               fill: '#10b981',
                               stroke: '#ffffff',
                               strokeWidth: 2,
                             }}
                             activeDot={{
-                              r: 7,
+                              r: 8,
                               fill: '#059669',
                               stroke: '#ffffff',
                               strokeWidth: 3,
@@ -709,9 +982,11 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                       </ResponsiveContainer>
                     </div>
 
-                    {/* Подпись горизонтальной оси */}
-                    <div className="text-center text-[11px] text-slate-400 dark:text-slate-500 font-medium -mt-2">
-                      {period === 'yesterday' ? 'Время проведения заправки (чч:мм)' : 'Календарная дата заправки'}
+                    {/* Поясняющая надпись шкалы / название периода */}
+                    <div className="text-center mt-1">
+                      <span className="inline-block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/90 py-1.5 px-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                        {processedData.axisCaption}
+                      </span>
                     </div>
                   </div>
 
@@ -751,7 +1026,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                         </div>
                         <div className="min-w-0">
                           <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Операций в ВС</div>
-                          <div className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 mt-0.5">
+                          <div className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 mt-0.5 font-mono">
                             {processedData.operationsCount}
                           </div>
                           <div className="text-[11px] text-slate-400 mt-0.5">
@@ -797,7 +1072,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                     <div className="mt-4 p-3.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/50 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed flex items-start gap-2.5">
                       <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
                       <div>
-                        За выбранный период <span className="font-semibold text-slate-900 dark:text-white">({processedData.periodTitle}: {processedData.dateRangeText})</span> всеми операциями «Выдача в ВС» успешно заправлено <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{formatNumber(processedData.totalLiters)} литров</span> авиакеросина. Всего выполнено <span className="font-semibold text-slate-900 dark:text-white">{processedData.operationsCount} операций заправки</span> ВС со средней плотностью партий топлива <span className="font-semibold font-mono text-slate-900 dark:text-white">{processedData.avgDensity} г/см³</span>.
+                        За выбранный период <span className="font-semibold text-slate-900 dark:text-white">({processedData.periodTitle}: {processedData.dateRangeText})</span> всеми операциями «Выдача в ВС» успешно заправлено <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{formatNumber(processedData.totalLiters)} литров</span> авиакеросина. Всего выполнено <span className="font-semibold text-slate-900 dark:text-white">{processedData.operationsCount} операций заправки</span> ВС со средней физической плотностью партий топлива <span className="font-semibold font-mono text-slate-900 dark:text-white">{processedData.avgDensity} г/см³</span>.
                       </div>
                     </div>
                   </div>
@@ -819,6 +1094,8 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                           <p className="text-xs text-slate-500 dark:text-slate-400">
                             {period === 'yesterday' 
                               ? 'Фактическая масса каждой заправки ВС по времени суток' 
+                              : period === 'three_months' || period === 'six_months' || period === 'year'
+                              ? 'Суммарная помесячная масса выданного топлива'
                               : 'Суммарная суточная масса выданного топлива'}
                           </p>
                         </div>
@@ -854,10 +1131,9 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                           <XAxis
                             dataKey="name"
                             axisLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
-                            tickLine={false}
-                            tick={{ fill: '#64748b', fontSize: 11 }}
+                            tickLine={processedData.showAxisTicks}
+                            tick={processedData.showAxisTicks ? { fill: '#64748b', fontSize: 12, fontWeight: 500 } : false}
                             dy={10}
-                            interval={period === 'three_months' || period === 'six_months' || period === 'year' ? 'preserveStartEnd' : 0}
                           />
                           <YAxis
                             axisLine={false}
@@ -880,13 +1156,13 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                             animationDuration={1400}
                             animationEasing="ease-out"
                             dot={{
-                              r: period === 'yesterday' ? 5 : 3.5,
+                              r: period === 'three_months' || period === 'six_months' ? 6 : 4,
                               fill: '#6366f1',
                               stroke: '#ffffff',
                               strokeWidth: 2,
                             }}
                             activeDot={{
-                              r: 7,
+                              r: 8,
                               fill: '#4f46e5',
                               stroke: '#ffffff',
                               strokeWidth: 3,
@@ -896,9 +1172,11 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                       </ResponsiveContainer>
                     </div>
 
-                    {/* Подпись горизонтальной оси */}
-                    <div className="text-center text-[11px] text-slate-400 dark:text-slate-500 font-medium -mt-2">
-                      {period === 'yesterday' ? 'Время проведения заправки (чч:мм)' : 'Календарная дата заправки'}
+                    {/* Поясняющая надпись шкалы / название периода */}
+                    <div className="text-center mt-1">
+                      <span className="inline-block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/90 py-1.5 px-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                        {processedData.axisCaption}
+                      </span>
                     </div>
                   </div>
 
@@ -938,7 +1216,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                         </div>
                         <div className="min-w-0">
                           <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Операций в ВС</div>
-                          <div className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 mt-0.5">
+                          <div className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 mt-0.5 font-mono">
                             {processedData.operationsCount}
                           </div>
                           <div className="text-[11px] text-slate-400 mt-0.5">
@@ -984,7 +1262,7 @@ export default function DispensingVSDynamics({ onBack }: DispensingVSDynamicsPro
                     <div className="mt-4 p-3.5 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/50 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed flex items-start gap-2.5">
                       <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
                       <div>
-                        За выбранный период <span className="font-semibold text-slate-900 dark:text-white">({processedData.periodTitle}: {processedData.dateRangeText})</span> суммарная масса выданного авиационного топлива составила <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono">{formatNumber(processedData.totalKg)} кг</span>. Физическая плотность выданного топлива составила <span className="font-semibold font-mono text-slate-900 dark:text-white">{processedData.avgDensity} г/см³</span> по <span className="font-semibold text-slate-900 dark:text-white">{processedData.operationsCount} выполненным заправкам</span>.
+                        За выбранный период <span className="font-semibold text-slate-900 dark:text-white">({processedData.periodTitle}: {processedData.dateRangeText})</span> суммарная масса выданного авиационного топлива составила <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono">{formatNumber(processedData.totalKg)} кг</span>. Физическая плотность выданного керосина составила <span className="font-semibold font-mono text-slate-900 dark:text-white">{processedData.avgDensity} г/см³</span> по <span className="font-semibold text-slate-900 dark:text-white">{processedData.operationsCount} выполненным заправкам</span> ВС.
                       </div>
                     </div>
                   </div>
