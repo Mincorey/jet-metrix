@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, X, Info, Thermometer, Droplets, Database, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, X, Info, Thermometer, Droplets, Database, ArrowLeft, Ruler } from 'lucide-react';
 
 interface TankData {
   name: string;
@@ -8,6 +8,8 @@ interface TankData {
   maxCapacity: number;
   density: number;
   temperature: number;
+  averageLevel?: number;
+  lastMeasurementDate?: string | null;
 }
 
 interface TankParkMapProps {
@@ -135,9 +137,9 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
         {/* Modal */}
         {selectedTank && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl border border-white/20">
+            <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl border border-white/20 max-h-[90vh] flex flex-col">
               {/* Modal Header */}
-              <div className="p-6 pb-0 flex justify-between items-start">
+              <div className="p-6 pb-0 flex justify-between items-start shrink-0">
                 <div>
                   <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{selectedTank.name}</h3>
                 </div>
@@ -150,7 +152,7 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
               </div>
 
               {/* Modal Body */}
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-3.5 overflow-y-auto">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-700">
                     <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Объем</p>
@@ -162,16 +164,38 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
                   </div>
                 </div>
 
+                {/* Средний взлив (уровень) */}
+                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/10 dark:bg-amber-400/10 flex items-center justify-center text-amber-500 dark:text-amber-400 shrink-0">
+                      <Ruler className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Средний взлив</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        {selectedTank.lastMeasurementDate ? `Замер: ${selectedTank.lastMeasurementDate}` : 'по последнему замеру'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-mono font-bold text-slate-700 dark:text-slate-200">
+                      {selectedTank.averageLevel && selectedTank.averageLevel > 0
+                        ? `${selectedTank.averageLevel.toLocaleString('ru-RU')} мм`
+                        : '—'}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-700 flex items-center gap-3">
-                    <Thermometer className="w-5 h-5 text-orange-500" />
+                    <Thermometer className="w-5 h-5 text-orange-500 shrink-0" />
                     <div>
                       <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Температура</p>
                       <p className="text-base font-bold text-slate-700 dark:text-slate-200">{selectedTank.temperature} °C</p>
                     </div>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-700 flex items-center gap-3">
-                    <Droplets className="w-5 h-5 text-blue-500" />
+                    <Droplets className="w-5 h-5 text-blue-500 shrink-0" />
                     <div>
                       <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Плотность</p>
                       <p className="text-base font-bold text-slate-700 dark:text-slate-200">{selectedTank.density}</p>
@@ -180,7 +204,7 @@ const TankParkMap: React.FC<TankParkMapProps> = ({ onBack }) => {
                 </div>
 
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-3xl border border-emerald-100 dark:border-emerald-800 flex items-start gap-4">
-                  <Database className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mt-1" />
+                  <Database className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mt-1 shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-1">Свободный объем</p>
                     <p className="text-sm text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed font-medium">

@@ -32,7 +32,7 @@ export async function getParkStateData() {
   const results = await Promise.all((tanks || []).map(async (tank) => {
     const { data: lastMeasArr } = await supabase
       .from('Daily_Measurements')
-      .select('id, Workday_ID, Volume, Mass, Density, Temperature, Date, Timestamp')
+      .select('id, Workday_ID, Volume, Mass, Density, Temperature, Date, Timestamp, Average_Level')
       .eq('Tank_Name', tank.Name)
       .order('id', { ascending: false })
       .limit(1)
@@ -58,9 +58,10 @@ export async function getParkStateData() {
     const currentVolume = baseVolume + totalAdded - totalRemoved
     const currentMass = baseMass + totalMassAdded - totalMassRemoved
 
-    const [densRows, tempRows] = await Promise.all([
+    const [densRows, tempRows, levelRows] = await Promise.all([
       supabase.from('Daily_Measurements').select('Density').eq('Tank_Name', tank.Name).gt('Density', 0).order('id', { ascending: false }).limit(1),
       supabase.from('Daily_Measurements').select('Temperature').eq('Tank_Name', tank.Name).gt('Temperature', 0).order('id', { ascending: false }).limit(1),
+      supabase.from('Daily_Measurements').select('Average_Level, Date').eq('Tank_Name', tank.Name).gt('Average_Level', 0).order('id', { ascending: false }).limit(1),
     ])
 
     let maxVol = 0
@@ -72,6 +73,9 @@ export async function getParkStateData() {
     } catch { }
     const maxCapacity = Math.ceil(maxVol / 1000) * 1000 || (tank.Name.includes('РГС-100') ? 100000 : 50000)
 
+    const avgLevel = lastMeas?.Average_Level || levelRows.data?.[0]?.Average_Level || 0
+    const measDate = lastMeas?.Date || levelRows.data?.[0]?.Date || null
+
     return {
       name: tank.Name,
       volume: Math.round(currentVolume),
@@ -79,6 +83,8 @@ export async function getParkStateData() {
       maxCapacity,
       density: densRows.data?.[0]?.Density ?? (lastMeas?.Density ?? 0),
       temperature: tempRows.data?.[0]?.Temperature ?? (lastMeas?.Temperature ?? 0),
+      averageLevel: Math.round(avgLevel),
+      lastMeasurementDate: measDate,
     }
   }))
 
